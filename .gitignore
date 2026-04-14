@@ -49,3 +49,5 @@ agent/.env
 agent/.venv/
 agent/__pycache__/
 agent/**/__pycache__/
+agent/build/
+agent/dist/

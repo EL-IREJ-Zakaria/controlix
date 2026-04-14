@@ -28,5 +28,15 @@
     "icon": "rocket",
     "created_at": "2026-04-14T00:00:00+00:00",
     "updated_at": "2026-04-14T00:00:00+00:00"
+  },
+  {
+    "id": "4b6c0c0a216d498f953162858276c91c",
+    "title": "lock screen",
+    "description": "",
+    "script": "rundll32.exe user32.dll, LockWorkStation",
+    "accent_hex": "#EF4444",
+    "icon": "power",
+    "created_at": "2026-04-14T10:44:30.879834+00:00",
+    "updated_at": "2026-04-14T10:44:30.879834+00:00"
   }
 ]

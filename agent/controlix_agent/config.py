@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import os
 import socket
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = (
+    Path(sys.executable).resolve().parent
+    if getattr(sys, "frozen", False)
+    else Path(__file__).resolve().parent.parent
+)
 ENV_FILE = BASE_DIR / ".env"
 DATA_DIR = BASE_DIR / "data"
 TASKS_FILE = DATA_DIR / "tasks.json"

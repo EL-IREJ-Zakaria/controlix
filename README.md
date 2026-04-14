@@ -215,3 +215,69 @@ From `agent/`:
 pip install -r requirements.txt
 python run_agent.py
 ```
+
+## Build Windows executables
+
+This project can be packaged into two Windows executables:
+
+- `controlix.exe`: the Flutter desktop controller application
+- `controlix-agent.exe`: the Windows agent that executes PowerShell tasks
+
+### 1. Build the Flutter Windows desktop `.exe`
+
+Prerequisites:
+
+- Flutter installed
+- Visual Studio with the `Desktop development with C++` workload
+
+Build command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\build_windows_client.ps1
+```
+
+Expected output:
+
+```text
+build\windows\x64\runner\Release\controlix.exe
+```
+
+### 2. Build the Windows agent `.exe`
+
+Prerequisites:
+
+- Python 3.11+ installed and available in `PATH`
+
+Build command:
+
+```powershell
+cd agent
+powershell -ExecutionPolicy Bypass -File .\build_agent.ps1
+```
+
+Expected output:
+
+```text
+agent\dist\controlix-agent.exe
+```
+
+The build script also prepares:
+
+- `agent\dist\.env.example`
+- `agent\dist\data\tasks.json`
+- `agent\dist\data\execution_logs.json`
+
+Before running the packaged agent:
+
+1. Copy `agent\dist\.env.example` to `agent\dist\.env`
+2. Set a real `CONTROLIX_SECRET_KEY`
+3. Start `controlix-agent.exe`
+
+### 3. Important note
+
+The desktop controller and the Windows agent are separate executables. This matches the current architecture:
+
+- the controller sends HTTP requests
+- the agent receives and executes PowerShell commands
+
+If you want, the next step can be to package both into a single Windows installer.
