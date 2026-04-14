@@ -273,6 +273,34 @@ Before running the packaged agent:
 2. Set a real `CONTROLIX_SECRET_KEY`
 3. Start `controlix-agent.exe`
 
+### 2.1 Build a real Windows installer for the agent
+
+Prerequisites:
+
+- Inno Setup 6 installed on the build machine
+
+Build command:
+
+```powershell
+cd agent
+powershell -ExecutionPolicy Bypass -File .\build_agent_setup.ps1
+```
+
+Expected output:
+
+```text
+agent\installer-output\controlix-agent-setup.exe
+```
+
+Installer behavior:
+
+- Installs per-user into `%LOCALAPPDATA%\Programs\Controlix Agent`
+- Creates `.env` from `.env.example` on first install
+- Preserves `.env`, `data\tasks.json`, and `data\execution_logs.json` across reinstalls
+- Can create desktop and startup shortcuts
+
+The installer intentionally uses `LocalAppData` instead of `Program Files` because the current agent stores writable runtime files next to the executable.
+
 ### 3. Important note
 
 The desktop controller and the Windows agent are separate executables. This matches the current architecture:

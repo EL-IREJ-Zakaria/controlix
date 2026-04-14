@@ -260,6 +260,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final gradient = AppTheme.pageGradient(theme.brightness);
         final tasks = taskController.tasks;
         final width = MediaQuery.sizeOf(context).width;
+        final isCompact = width < 720;
         final cardWidth = width > 1280
             ? (width - 88) / 3
             : width > 860
@@ -267,11 +268,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             : width - 48;
 
         return Scaffold(
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => _openTaskEditor(),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('New task'),
-          ),
           body: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -303,7 +299,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     onRefresh: () => taskController.refreshTasks(config),
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 120),
+                      padding: EdgeInsets.fromLTRB(
+                        isCompact ? 16 : 24,
+                        16,
+                        isCompact ? 16 : 24,
+                        48,
+                      ),
                       children: [
                         ConnectionStatusCard(
                           config: config,
@@ -316,6 +317,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           onRefresh: () => taskController.refreshTasks(config),
                           onEditConnection: _resetConnection,
                           onThemeChanged: appController.updateThemeMode,
+                          onCreateTask: () => _openTaskEditor(),
+                          hasConnectionIssue:
+                              taskController.errorMessage != null,
                         ),
                         const SizedBox(height: 24),
                         if (taskController.errorMessage != null) ...[
@@ -330,35 +334,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           const SizedBox(height: 24),
                         ],
-                        Row(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Automation tasks',
-                                    style: theme.textTheme.headlineMedium,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Tap any card to execute the PowerShell script on the Windows agent.',
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: theme.colorScheme.onSurface
-                                          .withValues(alpha: 0.72),
-                                    ),
-                                  ),
-                                ],
+                            Text(
+                              'Automation tasks',
+                              style: theme.textTheme.headlineMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Tap any card to execute the PowerShell script on the Windows agent.',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: theme.colorScheme.onSurface.withValues(
+                                  alpha: 0.72,
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            FilledButton.icon(
+                          ],
+                        ),
+                        if (!isCompact) ...[
+                          const SizedBox(height: 16),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.icon(
                               onPressed: () => _openTaskEditor(),
                               icon: const Icon(Icons.add_rounded),
                               label: const Text('Add task'),
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                         const SizedBox(height: 20),
                         if (taskController.isLoading && tasks.isEmpty)
                           const GlassPanel(
@@ -372,23 +376,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         else if (tasks.isEmpty)
                           _EmptyState(onCreateTask: () => _openTaskEditor())
                         else
-                          Wrap(
-                            spacing: 16,
-                            runSpacing: 16,
-                            children: tasks.map((task) {
-                              return SizedBox(
-                                width: cardWidth,
-                                child: TaskCard(
-                                  task: task,
-                                  isExecuting:
-                                      taskController.executingTaskId == task.id,
-                                  onExecute: () => _executeTask(task),
-                                  onEdit: () => _openTaskEditor(task: task),
-                                  onDelete: () => _deleteTask(task),
+                          isCompact
+                              ? Column(
+                                  children: tasks.map((task) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(
+                                        bottom: 16,
+                                      ),
+                                      child: TaskCard(
+                                        task: task,
+                                        isExecuting:
+                                            taskController.executingTaskId ==
+                                            task.id,
+                                        onExecute: () => _executeTask(task),
+                                        onEdit: () =>
+                                            _openTaskEditor(task: task),
+                                        onDelete: () => _deleteTask(task),
+                                      ),
+                                    );
+                                  }).toList(),
+                                )
+                              : Wrap(
+                                  spacing: 16,
+                                  runSpacing: 16,
+                                  children: tasks.map((task) {
+                                    return SizedBox(
+                                      width: cardWidth,
+                                      child: TaskCard(
+                                        task: task,
+                                        isExecuting:
+                                            taskController.executingTaskId ==
+                                            task.id,
+                                        onExecute: () => _executeTask(task),
+                                        onEdit: () =>
+                                            _openTaskEditor(task: task),
+                                        onDelete: () => _deleteTask(task),
+                                      ),
+                                    );
+                                  }).toList(),
                                 ),
-                              );
-                            }).toList(),
-                          ),
                         const SizedBox(height: 32),
                         Row(
                           children: [

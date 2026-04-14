@@ -48,5 +48,15 @@
     "icon": "desktop",
     "created_at": "2026-04-14T10:49:01.092949+00:00",
     "updated_at": "2026-04-14T10:51:53.340361+00:00"
+  },
+  {
+    "id": "0550624c7eac49d9a7141a797e2eefe9",
+    "title": "tok screen",
+    "description": "",
+    "script": "Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $b=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; $img=New-Object System.Drawing.Bitmap $b.Width,$b.Height; $g=[System.Drawing.Graphics]::FromImage($img); $g.CopyFromScreen($b.Location,[System.Drawing.Point]::Empty,$b.Size); $img.Save(\"$env:C:\\Users\\ellei\\Documents\\screen.png\")",
+    "accent_hex": "#EF4444",
+    "icon": "desktop",
+    "created_at": "2026-04-14T11:53:51.813774+00:00",
+    "updated_at": "2026-04-14T11:55:03.488885+00:00"
   }
 ]

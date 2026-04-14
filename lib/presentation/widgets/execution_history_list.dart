@@ -73,7 +73,7 @@ class ExecutionHistoryList extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Exit code ${entry.errorCode} • ${entry.durationMs} ms',
+                  'Exit code ${entry.errorCode} - ${entry.durationMs} ms',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
                   ),

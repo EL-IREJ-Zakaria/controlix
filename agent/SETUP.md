@@ -99,6 +99,48 @@ cd C:\Users\ellei\Documents\Downloads\controlix\agent
 powershell -ExecutionPolicy Bypass -File .\build_agent.ps1
 ```
 
+## 6.1 Construire Un Vrai `setup.exe` Pour L'agent
+
+Prerequis:
+
+- Inno Setup 6 installe sur le PC de build
+
+Commande:
+
+```powershell
+cd C:\Users\ellei\Documents\Downloads\controlix\agent
+powershell -ExecutionPolicy Bypass -File .\build_agent_setup.ps1
+```
+
+Sortie attendue:
+
+```text
+agent\installer-output\controlix-agent-setup.exe
+```
+
+Ce setup:
+
+- installe l'agent dans `%LOCALAPPDATA%\Programs\Controlix Agent`
+- cree `.env` automatiquement au premier install a partir de `.env.example`
+- conserve `.env`, `data\tasks.json` et `data\execution_logs.json` lors d'une reinstall
+- peut creer un raccourci Bureau
+- peut ajouter un raccourci de demarrage Windows
+
+Pourquoi `%LOCALAPPDATA%` et pas `Program Files`:
+
+- l'agent ecrit ses donnees dans `data\`
+- il lit `.env` a cote de `controlix-agent.exe`
+- un dossier utilisateur evite les problemes d'ecriture sur les autres PC
+
+## 6.2 Installation Sur Un Autre PC
+
+1. Copie `controlix-agent-setup.exe` sur le PC cible
+2. Lance le setup
+3. Ouvre `%LOCALAPPDATA%\Programs\Controlix Agent\.env`
+4. Remplace `CONTROLIX_SECRET_KEY` par ta vraie cle
+5. Lance `Controlix Agent`
+6. Autorise le port `8765` dans le pare-feu si necessaire
+
 ## 7. Erreurs Courantes
 
 - `python --version` ouvre le Microsoft Store:
@@ -107,3 +149,5 @@ powershell -ExecutionPolicy Bypass -File .\build_agent.ps1
   installe `Desktop development with C++` via Visual Studio Installer.
 - Aucun acces depuis le mobile:
   verifie le pare-feu Windows et que le PC et le telephone sont sur le meme LAN.
+- `build_agent_setup.ps1` echoue avec `ISCC.exe not found`:
+  installe Inno Setup 6 ou passe `-InnoSetupCompiler "C:\chemin\vers\ISCC.exe"`.
