@@ -117,82 +117,16 @@ class ConnectionStatusCard extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: _StatusPill(
-                            label: statusLabel,
-                            isDark: isDark,
-                            hasConnectionIssue: hasConnectionIssue,
-                            foregroundColor: foregroundColor,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        _ActionButton(
-                          tooltip: 'Refresh tasks',
-                          onPressed: isRefreshing ? null : onRefresh,
-                          child: isRefreshing
-                              ? SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      foregroundColor,
-                                    ),
-                                  ),
-                                )
-                              : Icon(
-                                  Icons.refresh_rounded,
-                                  color: foregroundColor,
-                                  size: 20,
-                                ),
-                        ),
-                        const SizedBox(width: 8),
-                        _ActionButton(
-                          tooltip: 'Edit connection',
-                          onPressed: onEditConnection,
-                          child: Icon(
-                            Icons.router_rounded,
-                            color: foregroundColor,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        PopupMenuButton<ThemeMode>(
-                          tooltip: 'Theme mode',
-                          onSelected: onThemeChanged,
-                          itemBuilder: (context) {
-                            return const [
-                              PopupMenuItem(
-                                value: ThemeMode.system,
-                                child: Text('Follow system'),
-                              ),
-                              PopupMenuItem(
-                                value: ThemeMode.light,
-                                child: Text('Light mode'),
-                              ),
-                              PopupMenuItem(
-                                value: ThemeMode.dark,
-                                child: Text('Dark mode'),
-                              ),
-                            ];
-                          },
-                          child: _ActionFrame(
-                            child: Icon(
-                              switch (themeMode) {
-                                ThemeMode.light => Icons.light_mode_rounded,
-                                ThemeMode.dark => Icons.dark_mode_rounded,
-                                ThemeMode.system =>
-                                  Icons.brightness_auto_rounded,
-                              },
-                              color: foregroundColor,
-                              size: 20,
-                            ),
-                          ),
-                        ),
-                      ],
+                    _CardHeader(
+                      statusLabel: statusLabel,
+                      isDark: isDark,
+                      hasConnectionIssue: hasConnectionIssue,
+                      foregroundColor: foregroundColor,
+                      isRefreshing: isRefreshing,
+                      onRefresh: onRefresh,
+                      onEditConnection: onEditConnection,
+                      themeMode: themeMode,
+                      onThemeChanged: onThemeChanged,
                     ),
                     SizedBox(height: compact ? 28 : 34),
                     ConstrainedBox(
@@ -225,53 +159,12 @@ class ConnectionStatusCard extends StatelessWidget {
                         isDark: isDark,
                       )
                     else
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: Wrap(
-                              spacing: 12,
-                              runSpacing: 12,
-                              children: [
-                                SizedBox(
-                                  width: 210,
-                                  child: _InfoChip(
-                                    icon: Icons.device_hub_rounded,
-                                    label: config.ipAddress,
-                                    value: 'Port ${config.port}',
-                                    foregroundColor: foregroundColor,
-                                    isDark: isDark,
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 210,
-                                  child: _InfoChip(
-                                    icon: Icons.dashboard_customize_rounded,
-                                    label: '$taskCount tasks',
-                                    value: 'Synced from agent',
-                                    foregroundColor: foregroundColor,
-                                    isDark: isDark,
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 210,
-                                  child: _InfoChip(
-                                    icon: Icons.key_rounded,
-                                    label: 'Shared secret',
-                                    value: 'Stored locally',
-                                    foregroundColor: foregroundColor,
-                                    isDark: isDark,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          SizedBox(
-                            width: 188,
-                            child: _CreateTaskButton(onPressed: onCreateTask),
-                          ),
-                        ],
+                      _WideFooter(
+                        config: config,
+                        taskCount: taskCount,
+                        onCreateTask: onCreateTask,
+                        foregroundColor: foregroundColor,
+                        isDark: isDark,
                       ),
                   ],
                 ),
@@ -280,6 +173,74 @@ class ConnectionStatusCard extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _CardHeader extends StatelessWidget {
+  const _CardHeader({
+    required this.statusLabel,
+    required this.isDark,
+    required this.hasConnectionIssue,
+    required this.foregroundColor,
+    required this.isRefreshing,
+    required this.onRefresh,
+    required this.onEditConnection,
+    required this.themeMode,
+    required this.onThemeChanged,
+  });
+
+  final String statusLabel;
+  final bool isDark;
+  final bool hasConnectionIssue;
+  final Color foregroundColor;
+  final bool isRefreshing;
+  final VoidCallback onRefresh;
+  final VoidCallback onEditConnection;
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onThemeChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: _StatusPill(
+            label: statusLabel,
+            isDark: isDark,
+            hasConnectionIssue: hasConnectionIssue,
+            foregroundColor: foregroundColor,
+          ),
+        ),
+        const SizedBox(width: 12),
+        _ActionButton(
+          tooltip: 'Refresh tasks',
+          onPressed: isRefreshing ? null : onRefresh,
+          child: isRefreshing
+              ? SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(foregroundColor),
+                  ),
+                )
+              : Icon(Icons.refresh_rounded, color: foregroundColor, size: 20),
+        ),
+        const SizedBox(width: 8),
+        _ActionButton(
+          tooltip: 'Edit connection',
+          onPressed: onEditConnection,
+          child: Icon(Icons.router_rounded, color: foregroundColor, size: 20),
+        ),
+        const SizedBox(width: 8),
+        _ThemeModeButton(
+          themeMode: themeMode,
+          foregroundColor: foregroundColor,
+          onThemeChanged: onThemeChanged,
+        ),
+      ],
     );
   }
 }
@@ -339,6 +300,71 @@ class _CompactFooter extends StatelessWidget {
   }
 }
 
+class _WideFooter extends StatelessWidget {
+  const _WideFooter({
+    required this.config,
+    required this.taskCount,
+    required this.onCreateTask,
+    required this.foregroundColor,
+    required this.isDark,
+  });
+
+  final ConnectionConfig config;
+  final int taskCount;
+  final VoidCallback onCreateTask;
+  final Color foregroundColor;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              SizedBox(
+                width: 210,
+                child: _InfoChip(
+                  icon: Icons.device_hub_rounded,
+                  label: config.ipAddress,
+                  value: 'Port ${config.port}',
+                  foregroundColor: foregroundColor,
+                  isDark: isDark,
+                ),
+              ),
+              SizedBox(
+                width: 210,
+                child: _InfoChip(
+                  icon: Icons.dashboard_customize_rounded,
+                  label: '$taskCount tasks',
+                  value: 'Synced from agent',
+                  foregroundColor: foregroundColor,
+                  isDark: isDark,
+                ),
+              ),
+              SizedBox(
+                width: 210,
+                child: _InfoChip(
+                  icon: Icons.key_rounded,
+                  label: 'Shared secret',
+                  value: 'Stored locally',
+                  foregroundColor: foregroundColor,
+                  isDark: isDark,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 16),
+        SizedBox(width: 188, child: _CreateTaskButton(onPressed: onCreateTask)),
+      ],
+    );
+  }
+}
+
 class _StatusPill extends StatelessWidget {
   const _StatusPill({
     required this.label,
@@ -373,6 +399,44 @@ class _StatusPill extends StatelessWidget {
             color: foregroundColor,
             fontWeight: FontWeight.w700,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeModeButton extends StatelessWidget {
+  const _ThemeModeButton({
+    required this.themeMode,
+    required this.foregroundColor,
+    required this.onThemeChanged,
+  });
+
+  final ThemeMode themeMode;
+  final Color foregroundColor;
+  final ValueChanged<ThemeMode> onThemeChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<ThemeMode>(
+      tooltip: 'Theme mode',
+      onSelected: onThemeChanged,
+      itemBuilder: (context) {
+        return const [
+          PopupMenuItem(value: ThemeMode.system, child: Text('Follow system')),
+          PopupMenuItem(value: ThemeMode.light, child: Text('Light mode')),
+          PopupMenuItem(value: ThemeMode.dark, child: Text('Dark mode')),
+        ];
+      },
+      child: _ActionFrame(
+        child: Icon(
+          switch (themeMode) {
+            ThemeMode.light => Icons.light_mode_rounded,
+            ThemeMode.dark => Icons.dark_mode_rounded,
+            ThemeMode.system => Icons.brightness_auto_rounded,
+          },
+          color: foregroundColor,
+          size: 20,
         ),
       ),
     );
