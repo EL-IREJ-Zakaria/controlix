@@ -32,6 +32,7 @@ class TaskCard extends StatelessWidget {
         : 'Just created';
 
     return GlassPanel(
+      enableBlur: false,
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,

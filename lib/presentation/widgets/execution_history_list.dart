@@ -13,6 +13,7 @@ class ExecutionHistoryList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (history.isEmpty) {
       return const GlassPanel(
+        enableBlur: false,
         child: Text(
           'No execution history yet. Run a task to see local execution logs on this device.',
         ),
@@ -29,6 +30,7 @@ class ExecutionHistoryList extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: GlassPanel(
+            enableBlur: false,
             padding: const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

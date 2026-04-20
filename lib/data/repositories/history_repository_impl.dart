@@ -19,6 +19,13 @@ class HistoryRepositoryImpl implements HistoryRepository {
   }
 
   @override
+  Future<void> saveHistory(List<ExecutionHistoryEntry> entries) {
+    return _localDataSource.saveHistory(
+      entries.map(ExecutionHistoryEntryModel.fromEntity).toList(),
+    );
+  }
+
+  @override
   Future<void> saveHistoryEntry(ExecutionHistoryEntry entry) {
     return _localDataSource.saveHistoryEntry(
       ExecutionHistoryEntryModel.fromEntity(entry),

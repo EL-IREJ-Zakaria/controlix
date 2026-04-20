@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/glass_panel.dart';
+import '../../../domain/entities/connection_config.dart';
+import '../../../domain/entities/execution_history_entry.dart';
 import '../../../domain/entities/execution_result.dart';
 import '../../../domain/entities/remote_task.dart';
 import '../../controllers/app_controller.dart';
@@ -266,198 +268,317 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<AppController, TaskController>(
-      builder: (context, appController, taskController, _) {
-        final config = appController.connectionConfig;
-        if (config == null) {
+    final config = context.select<AppController, ConnectionConfig?>(
+      (controller) => controller.connectionConfig,
+    );
+    if (config == null) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+    final gradient = AppTheme.pageGradient(theme.brightness);
+    final width = MediaQuery.sizeOf(context).width;
+    final isCompact = width < 720;
+    final cardWidth = width > 1280
+        ? (width - 88) / 3
+        : width > 860
+        ? (width - 72) / 2
+        : width - 48;
+
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradient,
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -140,
+              right: -60,
+              child: _GlowOrb(
+                size: 320,
+                color: theme.colorScheme.primary.withValues(alpha: 0.18),
+              ),
+            ),
+            Positioned(
+              bottom: -120,
+              left: -80,
+              child: _GlowOrb(
+                size: 340,
+                color: theme.colorScheme.secondary.withValues(alpha: 0.14),
+              ),
+            ),
+            SafeArea(
+              child: RefreshIndicator(
+                onRefresh: () =>
+                    context.read<TaskController>().refreshTasks(config),
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(
+                    isCompact ? 16 : 24,
+                    16,
+                    isCompact ? 16 : 24,
+                    48,
+                  ),
+                  children: [
+                    _DashboardHeader(
+                      config: config,
+                      onRefresh: () =>
+                          context.read<TaskController>().refreshTasks(config),
+                      onEditConnection: _resetConnection,
+                      onCreateTask: () => _openTaskEditor(),
+                    ),
+                    const SizedBox(height: 24),
+                    const _DashboardErrorBanner(),
+                    _TaskSection(
+                      isCompact: isCompact,
+                      cardWidth: cardWidth,
+                      onCreateTask: () => _openTaskEditor(),
+                      onEditTask: (task) => _openTaskEditor(task: task),
+                      onDeleteTask: _deleteTask,
+                      onExecuteTask: _executeTask,
+                    ),
+                    const SizedBox(height: 32),
+                    const _HistorySection(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DashboardHeader extends StatelessWidget {
+  const _DashboardHeader({
+    required this.config,
+    required this.onRefresh,
+    required this.onEditConnection,
+    required this.onCreateTask,
+  });
+
+  final ConnectionConfig config;
+  final VoidCallback onRefresh;
+  final VoidCallback onEditConnection;
+  final VoidCallback onCreateTask;
+
+  @override
+  Widget build(BuildContext context) {
+    final themeMode = context.select<AppController, ThemeMode>(
+      (controller) => controller.themeMode,
+    );
+    final taskCount = context.select<TaskController, int>(
+      (controller) => controller.tasks.length,
+    );
+    final isRefreshing = context.select<TaskController, bool>(
+      (controller) => controller.isLoading,
+    );
+    final hasConnectionIssue = context.select<TaskController, bool>(
+      (controller) => controller.errorMessage != null,
+    );
+
+    return ConnectionStatusCard(
+      config: config,
+      themeMode: themeMode,
+      taskCount: taskCount,
+      statusLabel: hasConnectionIssue ? 'Connection issue' : 'Connected to PC',
+      isRefreshing: isRefreshing,
+      onRefresh: onRefresh,
+      onEditConnection: onEditConnection,
+      onThemeChanged: context.read<AppController>().updateThemeMode,
+      onCreateTask: onCreateTask,
+      hasConnectionIssue: hasConnectionIssue,
+    );
+  }
+}
+
+class _DashboardErrorBanner extends StatelessWidget {
+  const _DashboardErrorBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Selector<TaskController, String?>(
+      selector: (_, controller) => controller.errorMessage,
+      builder: (context, errorMessage, _) {
+        if (errorMessage == null) {
           return const SizedBox.shrink();
         }
 
-        final theme = Theme.of(context);
-        final gradient = AppTheme.pageGradient(theme.brightness);
-        final tasks = taskController.tasks;
-        final width = MediaQuery.sizeOf(context).width;
-        final isCompact = width < 720;
-        final cardWidth = width > 1280
-            ? (width - 88) / 3
-            : width > 860
-            ? (width - 72) / 2
-            : width - 48;
-
-        return Scaffold(
-          body: Container(
-            decoration: BoxDecoration(
+        return Column(
+          children: [
+            GlassPanel(
+              enableBlur: false,
               gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: gradient,
+                colors: [
+                  const Color(0xFFEF4444).withValues(alpha: 0.18),
+                  const Color(0xFFF97316).withValues(alpha: 0.12),
+                ],
               ),
+              child: Text(errorMessage),
             ),
-            child: Stack(
+            const SizedBox(height: 24),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TaskSection extends StatelessWidget {
+  const _TaskSection({
+    required this.isCompact,
+    required this.cardWidth,
+    required this.onCreateTask,
+    required this.onEditTask,
+    required this.onDeleteTask,
+    required this.onExecuteTask,
+  });
+
+  final bool isCompact;
+  final double cardWidth;
+  final VoidCallback onCreateTask;
+  final Future<void> Function(RemoteTask task) onEditTask;
+  final Future<void> Function(RemoteTask task) onDeleteTask;
+  final Future<void> Function(RemoteTask task) onExecuteTask;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Selector<
+      TaskController,
+      ({List<RemoteTask> tasks, bool isLoading, String? executingTaskId})
+    >(
+      selector: (_, controller) => (
+        tasks: controller.tasks,
+        isLoading: controller.isLoading,
+        executingTaskId: controller.executingTaskId,
+      ),
+      builder: (context, taskState, _) {
+        final tasks = taskState.tasks;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Positioned(
-                  top: -140,
-                  right: -60,
-                  child: _GlowOrb(
-                    size: 320,
-                    color: theme.colorScheme.primary.withValues(alpha: 0.18),
-                  ),
-                ),
-                Positioned(
-                  bottom: -120,
-                  left: -80,
-                  child: _GlowOrb(
-                    size: 340,
-                    color: theme.colorScheme.secondary.withValues(alpha: 0.14),
-                  ),
-                ),
-                SafeArea(
-                  child: RefreshIndicator(
-                    onRefresh: () => taskController.refreshTasks(config),
-                    child: ListView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.fromLTRB(
-                        isCompact ? 16 : 24,
-                        16,
-                        isCompact ? 16 : 24,
-                        48,
-                      ),
-                      children: [
-                        ConnectionStatusCard(
-                          config: config,
-                          themeMode: appController.themeMode,
-                          taskCount: tasks.length,
-                          statusLabel: taskController.errorMessage == null
-                              ? 'Connected to PC'
-                              : 'Connection issue',
-                          isRefreshing: taskController.isLoading,
-                          onRefresh: () => taskController.refreshTasks(config),
-                          onEditConnection: _resetConnection,
-                          onThemeChanged: appController.updateThemeMode,
-                          onCreateTask: () => _openTaskEditor(),
-                          hasConnectionIssue:
-                              taskController.errorMessage != null,
-                        ),
-                        const SizedBox(height: 24),
-                        if (taskController.errorMessage != null) ...[
-                          GlassPanel(
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color(0xFFEF4444).withValues(alpha: 0.18),
-                                const Color(0xFFF97316).withValues(alpha: 0.12),
-                              ],
-                            ),
-                            child: Text(taskController.errorMessage!),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Automation tasks',
-                              style: theme.textTheme.headlineMedium,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Tap any card to execute the PowerShell script on the Windows agent.',
-                              style: theme.textTheme.bodyLarge?.copyWith(
-                                color: theme.colorScheme.onSurface.withValues(
-                                  alpha: 0.72,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (!isCompact) ...[
-                          const SizedBox(height: 16),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: FilledButton.icon(
-                              onPressed: () => _openTaskEditor(),
-                              icon: const Icon(Icons.add_rounded),
-                              label: const Text('Add task'),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                        if (taskController.isLoading && tasks.isEmpty)
-                          const GlassPanel(
-                            child: Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(12),
-                                child: CircularProgressIndicator(),
-                              ),
-                            ),
-                          )
-                        else if (tasks.isEmpty)
-                          _EmptyState(onCreateTask: () => _openTaskEditor())
-                        else
-                          isCompact
-                              ? Column(
-                                  children: tasks.map((task) {
-                                    return Padding(
-                                      padding: const EdgeInsets.only(
-                                        bottom: 16,
-                                      ),
-                                      child: TaskCard(
-                                        task: task,
-                                        isExecuting:
-                                            taskController.executingTaskId ==
-                                            task.id,
-                                        onExecute: () => _executeTask(task),
-                                        onEdit: () =>
-                                            _openTaskEditor(task: task),
-                                        onDelete: () => _deleteTask(task),
-                                      ),
-                                    );
-                                  }).toList(),
-                                )
-                              : Wrap(
-                                  spacing: 16,
-                                  runSpacing: 16,
-                                  children: tasks.map((task) {
-                                    return SizedBox(
-                                      width: cardWidth,
-                                      child: TaskCard(
-                                        task: task,
-                                        isExecuting:
-                                            taskController.executingTaskId ==
-                                            task.id,
-                                        onExecute: () => _executeTask(task),
-                                        onEdit: () =>
-                                            _openTaskEditor(task: task),
-                                        onDelete: () => _deleteTask(task),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                        const SizedBox(height: 32),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'Local execution history',
-                                style: theme.textTheme.headlineMedium,
-                              ),
-                            ),
-                            if (taskController.history.isNotEmpty)
-                              TextButton.icon(
-                                onPressed: taskController.clearHistory,
-                                icon: const Icon(Icons.delete_sweep_rounded),
-                                label: const Text('Clear'),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        ExecutionHistoryList(history: taskController.history),
-                      ],
-                    ),
+                Text('Automation tasks', style: theme.textTheme.headlineMedium),
+                const SizedBox(height: 8),
+                Text(
+                  'Tap any card to execute the PowerShell script on the Windows agent.',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
                   ),
                 ),
               ],
             ),
-          ),
+            if (!isCompact) ...[
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FilledButton.icon(
+                  onPressed: onCreateTask,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Add task'),
+                ),
+              ),
+            ],
+            const SizedBox(height: 20),
+            if (taskState.isLoading && tasks.isEmpty)
+              const GlassPanel(
+                enableBlur: false,
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+              )
+            else if (tasks.isEmpty)
+              _EmptyState(onCreateTask: onCreateTask)
+            else if (isCompact)
+              Column(
+                children: tasks
+                    .map((task) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: TaskCard(
+                          task: task,
+                          isExecuting: taskState.executingTaskId == task.id,
+                          onExecute: () => onExecuteTask(task),
+                          onEdit: () => onEditTask(task),
+                          onDelete: () => onDeleteTask(task),
+                        ),
+                      );
+                    })
+                    .toList(growable: false),
+              )
+            else
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: tasks
+                    .map((task) {
+                      return SizedBox(
+                        width: cardWidth,
+                        child: TaskCard(
+                          task: task,
+                          isExecuting: taskState.executingTaskId == task.id,
+                          onExecute: () => onExecuteTask(task),
+                          onEdit: () => onEditTask(task),
+                          onDelete: () => onDeleteTask(task),
+                        ),
+                      );
+                    })
+                    .toList(growable: false),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _HistorySection extends StatelessWidget {
+  const _HistorySection();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Selector<TaskController, List<ExecutionHistoryEntry>>(
+      selector: (_, controller) => controller.history,
+      builder: (context, history, _) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Local execution history',
+                    style: theme.textTheme.headlineMedium,
+                  ),
+                ),
+                if (history.isNotEmpty)
+                  TextButton.icon(
+                    onPressed: () =>
+                        context.read<TaskController>().clearHistory(),
+                    icon: const Icon(Icons.delete_sweep_rounded),
+                    label: const Text('Clear'),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ExecutionHistoryList(history: history),
+          ],
         );
       },
     );
@@ -493,6 +614,7 @@ class _EmptyState extends StatelessWidget {
     final theme = Theme.of(context);
 
     return GlassPanel(
+      enableBlur: false,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

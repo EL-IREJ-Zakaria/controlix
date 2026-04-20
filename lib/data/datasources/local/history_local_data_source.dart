@@ -25,17 +25,23 @@ class HistoryLocalDataSource {
     return entries;
   }
 
-  Future<void> saveHistoryEntry(ExecutionHistoryEntryModel entry) async {
-    final currentEntries = await loadHistory();
-    final nextEntries = <ExecutionHistoryEntryModel>[
-      entry,
-      ...currentEntries.where((item) => item.id != entry.id),
-    ].take(AppConstants.executionHistoryLimit).toList();
+  Future<void> saveHistory(List<ExecutionHistoryEntryModel> entries) async {
+    final nextEntries = entries
+        .take(AppConstants.executionHistoryLimit)
+        .toList(growable: false);
 
     await _preferences.setString(
       AppConstants.prefsHistoryKey,
       jsonEncode(nextEntries.map((item) => item.toJson()).toList()),
     );
+  }
+
+  Future<void> saveHistoryEntry(ExecutionHistoryEntryModel entry) async {
+    final currentEntries = await loadHistory();
+    await saveHistory(<ExecutionHistoryEntryModel>[
+      entry,
+      ...currentEntries.where((item) => item.id != entry.id),
+    ]);
   }
 
   Future<void> clearHistory() async {

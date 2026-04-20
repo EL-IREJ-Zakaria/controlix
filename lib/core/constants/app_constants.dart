@@ -4,6 +4,7 @@ class AppConstants {
   static const String appName = 'Controlix';
   static const int agentPort = 8765;
   static const int executionHistoryLimit = 25;
+  static const int executionHistoryOutputLimit = 1200;
 
   static const String prefsConfigKey = 'controlix_connection_config';
   static const String prefsThemeModeKey = 'controlix_theme_mode';

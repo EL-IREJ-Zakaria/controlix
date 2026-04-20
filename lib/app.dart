@@ -20,6 +20,39 @@ import 'presentation/screens/connect/connect_screen.dart';
 import 'presentation/screens/dashboard/dashboard_screen.dart';
 import 'presentation/screens/splash/splash_screen.dart';
 
+class ControlixBootstrapApp extends StatefulWidget {
+  const ControlixBootstrapApp({super.key});
+
+  @override
+  State<ControlixBootstrapApp> createState() => _ControlixBootstrapAppState();
+}
+
+class _ControlixBootstrapAppState extends State<ControlixBootstrapApp> {
+  late final Future<SharedPreferences> _sharedPreferencesFuture =
+      SharedPreferences.getInstance();
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<SharedPreferences>(
+      future: _sharedPreferencesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return ControlixApp(sharedPreferences: snapshot.data!);
+        }
+
+        return MaterialApp(
+          title: 'Controlix',
+          debugShowCheckedModeBanner: false,
+          themeMode: ThemeMode.system,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          home: const SplashScreen(),
+        );
+      },
+    );
+  }
+}
+
 class ControlixApp extends StatelessWidget {
   const ControlixApp({super.key, required this.sharedPreferences});
 
@@ -62,7 +95,7 @@ class ControlixApp extends StatelessWidget {
             executeTask: ExecuteTaskUseCase(taskRepository),
             verifyConnection: VerifyConnectionUseCase(taskRepository),
             loadHistory: LoadHistoryUseCase(historyRepository),
-            saveHistoryEntry: SaveHistoryEntryUseCase(historyRepository),
+            saveHistory: SaveHistoryUseCase(historyRepository),
             clearHistory: ClearHistoryUseCase(historyRepository),
           ),
         ),

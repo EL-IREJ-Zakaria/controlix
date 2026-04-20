@@ -9,6 +9,16 @@ class LoadHistoryUseCase {
   Future<List<ExecutionHistoryEntry>> call() => _repository.loadHistory();
 }
 
+class SaveHistoryUseCase {
+  const SaveHistoryUseCase(this._repository);
+
+  final HistoryRepository _repository;
+
+  Future<void> call(List<ExecutionHistoryEntry> entries) {
+    return _repository.saveHistory(entries);
+  }
+}
+
 class SaveHistoryEntryUseCase {
   const SaveHistoryEntryUseCase(this._repository);
 

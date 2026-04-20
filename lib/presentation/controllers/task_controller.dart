@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/error/app_exception.dart';
 import '../../domain/entities/connection_config.dart';
 import '../../domain/entities/execution_history_entry.dart';
@@ -16,7 +19,7 @@ class TaskController extends ChangeNotifier {
     required ExecuteTaskUseCase executeTask,
     required VerifyConnectionUseCase verifyConnection,
     required LoadHistoryUseCase loadHistory,
-    required SaveHistoryEntryUseCase saveHistoryEntry,
+    required SaveHistoryUseCase saveHistory,
     required ClearHistoryUseCase clearHistory,
   }) : _fetchTasks = fetchTasks,
        _saveTask = saveTask,
@@ -24,7 +27,7 @@ class TaskController extends ChangeNotifier {
        _executeTask = executeTask,
        _verifyConnection = verifyConnection,
        _loadHistory = loadHistory,
-       _saveHistoryEntry = saveHistoryEntry,
+       _saveHistory = saveHistory,
        _clearHistory = clearHistory;
 
   final FetchTasksUseCase _fetchTasks;
@@ -33,7 +36,7 @@ class TaskController extends ChangeNotifier {
   final ExecuteTaskUseCase _executeTask;
   final VerifyConnectionUseCase _verifyConnection;
   final LoadHistoryUseCase _loadHistory;
-  final SaveHistoryEntryUseCase _saveHistoryEntry;
+  final SaveHistoryUseCase _saveHistory;
   final ClearHistoryUseCase _clearHistory;
 
   List<RemoteTask> _tasks = const <RemoteTask>[];
@@ -53,17 +56,24 @@ class TaskController extends ChangeNotifier {
 
   Future<void> initialize(ConnectionConfig config) async {
     final fingerprint = '${config.baseUrl}|${config.secretKey}';
-    if (_connectionFingerprint == fingerprint &&
-        _historyLoaded &&
-        _remoteLoaded) {
+    final connectionChanged = _connectionFingerprint != fingerprint;
+    if (!connectionChanged && _historyLoaded && (_remoteLoaded || _isLoading)) {
       return;
     }
 
     _connectionFingerprint = fingerprint;
-    await Future.wait<void>(<Future<void>>[
-      if (!_historyLoaded) _hydrateHistory(),
-      refreshTasks(config),
-    ]);
+    if (connectionChanged) {
+      _remoteLoaded = false;
+      _errorMessage = null;
+    }
+
+    if (!_remoteLoaded && !_isLoading) {
+      unawaited(refreshTasks(config));
+    }
+
+    if (!_historyLoaded) {
+      await _hydrateHistory();
+    }
   }
 
   Future<void> verifyConnection(ConnectionConfig config) {
@@ -71,6 +81,10 @@ class TaskController extends ChangeNotifier {
   }
 
   Future<void> refreshTasks(ConnectionConfig config) async {
+    if (_isLoading) {
+      return;
+    }
+
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -130,8 +144,12 @@ class TaskController extends ChangeNotifier {
         executedAt: result.executedAt,
         durationMs: result.durationMs,
       );
-      await _saveHistoryEntry(historyEntry);
-      await _hydrateHistory();
+      _history = <ExecutionHistoryEntry>[
+        historyEntry,
+        ..._history.where((item) => item.id != historyEntry.id),
+      ].take(AppConstants.executionHistoryLimit).toList(growable: false);
+      _historyLoaded = true;
+      await _saveHistory(_history);
       return result;
     } finally {
       _executingTaskId = null;

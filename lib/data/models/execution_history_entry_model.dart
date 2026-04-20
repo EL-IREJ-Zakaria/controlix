@@ -1,3 +1,4 @@
+import '../../core/constants/app_constants.dart';
 import '../../core/utils/powershell_output_formatter.dart';
 import '../../domain/entities/execution_history_entry.dart';
 
@@ -19,7 +20,7 @@ class ExecutionHistoryEntryModel extends ExecutionHistoryEntry {
       taskId: entity.taskId,
       taskTitle: entity.taskTitle,
       success: entity.success,
-      output: entity.output,
+      output: _prepareOutput(entity.output),
       errorCode: entity.errorCode,
       executedAt: entity.executedAt,
       durationMs: entity.durationMs,
@@ -32,9 +33,7 @@ class ExecutionHistoryEntryModel extends ExecutionHistoryEntry {
       taskId: json['task_id'] as String? ?? '',
       taskTitle: json['task_title'] as String? ?? 'Task',
       success: json['success'] as bool? ?? false,
-      output: PowerShellOutputFormatter.sanitize(
-        json['output'] as String? ?? '',
-      ),
+      output: _prepareOutput(json['output'] as String? ?? ''),
       errorCode: json['error_code'] as int? ?? -1,
       executedAt:
           DateTime.tryParse(json['executed_at'] as String? ?? '')?.toLocal() ??
@@ -54,5 +53,17 @@ class ExecutionHistoryEntryModel extends ExecutionHistoryEntry {
       'executed_at': executedAt.toIso8601String(),
       'duration_ms': durationMs,
     };
+  }
+
+  static String _prepareOutput(String rawOutput) {
+    final sanitized = PowerShellOutputFormatter.sanitize(rawOutput);
+    if (sanitized.length <= AppConstants.executionHistoryOutputLimit) {
+      return sanitized;
+    }
+
+    final truncated = sanitized
+        .substring(0, AppConstants.executionHistoryOutputLimit)
+        .trimRight();
+    return '$truncated\n\n[Output truncated for local history]';
   }
 }
