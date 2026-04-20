@@ -311,7 +311,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           themeMode: appController.themeMode,
                           taskCount: tasks.length,
                           statusLabel: taskController.errorMessage == null
-                              ? 'Agent synced'
+                              ? 'Connected to PC'
                               : 'Connection issue',
                           isRefreshing: taskController.isLoading,
                           onRefresh: () => taskController.refreshTasks(config),

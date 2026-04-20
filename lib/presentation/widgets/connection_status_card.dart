@@ -202,18 +202,10 @@ class _CardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final actions = Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
-        Expanded(
-          child: _StatusPill(
-            label: statusLabel,
-            isDark: isDark,
-            hasConnectionIssue: hasConnectionIssue,
-            foregroundColor: foregroundColor,
-          ),
-        ),
-        const SizedBox(width: 12),
         _ActionButton(
           tooltip: 'Refresh tasks',
           onPressed: isRefreshing ? null : onRefresh,
@@ -228,19 +220,55 @@ class _CardHeader extends StatelessWidget {
                 )
               : Icon(Icons.refresh_rounded, color: foregroundColor, size: 20),
         ),
-        const SizedBox(width: 8),
         _ActionButton(
           tooltip: 'Edit connection',
           onPressed: onEditConnection,
           child: Icon(Icons.router_rounded, color: foregroundColor, size: 20),
         ),
-        const SizedBox(width: 8),
         _ThemeModeButton(
           themeMode: themeMode,
           foregroundColor: foregroundColor,
           onThemeChanged: onThemeChanged,
         ),
       ],
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final stackedHeader = constraints.maxWidth < 430;
+
+        if (stackedHeader) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _StatusPill(
+                label: statusLabel,
+                isDark: isDark,
+                hasConnectionIssue: hasConnectionIssue,
+                foregroundColor: foregroundColor,
+              ),
+              const SizedBox(height: 12),
+              Align(alignment: Alignment.centerRight, child: actions),
+            ],
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _StatusPill(
+                label: statusLabel,
+                isDark: isDark,
+                hasConnectionIssue: hasConnectionIssue,
+                foregroundColor: foregroundColor,
+              ),
+            ),
+            const SizedBox(width: 12),
+            actions,
+          ],
+        );
+      },
     );
   }
 }
@@ -380,26 +408,63 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
+    final statusColor = hasConnectionIssue
+        ? const Color(0xFFFB7185)
+        : const Color(0xFF22C55E);
+    final labelColor = hasConnectionIssue ? foregroundColor : Colors.white;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        gradient: hasConnectionIssue
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: <Color>[Color(0xFF22C55E), Color(0xFF16A34A)],
+              ),
+        color: hasConnectionIssue
+            ? statusColor.withValues(alpha: isDark ? 0.20 : 0.28)
+            : null,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
           color: hasConnectionIssue
-              ? const Color(0xFFFB7185).withValues(alpha: isDark ? 0.20 : 0.28)
-              : Colors.white.withValues(alpha: isDark ? 0.14 : 0.50),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: isDark ? 0.10 : 0.52),
-          ),
+              ? Colors.white.withValues(alpha: isDark ? 0.10 : 0.52)
+              : statusColor.withValues(alpha: 0.84),
         ),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: foregroundColor,
-            fontWeight: FontWeight.w700,
+        boxShadow: hasConnectionIssue
+            ? null
+            : const <BoxShadow>[
+                BoxShadow(
+                  color: Color(0x3322C55E),
+                  blurRadius: 16,
+                  offset: Offset(0, 8),
+                ),
+              ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            hasConnectionIssue
+                ? Icons.warning_amber_rounded
+                : Icons.check_circle_rounded,
+            size: 18,
+            color: labelColor,
           ),
-        ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: labelColor,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

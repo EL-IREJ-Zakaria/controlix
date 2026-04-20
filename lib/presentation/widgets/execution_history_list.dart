@@ -62,22 +62,6 @@ class ExecutionHistoryList extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  entry.output.isEmpty
-                      ? 'No output was returned.'
-                      : entry.output,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Exit code ${entry.errorCode} - ${entry.durationMs} ms',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
-                  ),
-                ),
               ],
             ),
           ),

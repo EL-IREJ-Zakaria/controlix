@@ -123,7 +123,7 @@ class TaskController extends ChangeNotifier {
       final historyEntry = ExecutionHistoryEntry(
         id: '${task.id}-${result.executedAt.toUtc().toIso8601String()}-${result.errorCode}',
         taskId: task.id ?? '',
-        taskTitle: result.taskTitle,
+        taskTitle: task.title,
         success: result.success,
         output: result.output,
         errorCode: result.errorCode,
