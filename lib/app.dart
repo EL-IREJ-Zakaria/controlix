@@ -7,14 +7,18 @@ import 'core/network/api_client.dart';
 import 'core/theme/app_theme.dart';
 import 'data/datasources/local/config_local_data_source.dart';
 import 'data/datasources/local/history_local_data_source.dart';
+import 'data/datasources/remote/chat_remote_data_source.dart';
 import 'data/datasources/remote/task_remote_data_source.dart';
 import 'data/repositories/app_settings_repository_impl.dart';
+import 'data/repositories/chat_repository_impl.dart';
 import 'data/repositories/history_repository_impl.dart';
 import 'data/repositories/task_repository_impl.dart';
+import 'domain/usecases/chat_usecases.dart';
 import 'domain/usecases/history_usecases.dart';
 import 'domain/usecases/settings_usecases.dart';
 import 'domain/usecases/task_usecases.dart';
 import 'presentation/controllers/app_controller.dart';
+import 'presentation/controllers/chat_controller.dart';
 import 'presentation/controllers/task_controller.dart';
 import 'presentation/screens/connect/connect_screen.dart';
 import 'presentation/screens/dashboard/dashboard_screen.dart';
@@ -60,15 +64,17 @@ class ControlixApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final httpClient = http.Client();
+    final apiClient = ApiClient(httpClient);
+
     final settingsRepository = AppSettingsRepositoryImpl(
       ConfigLocalDataSource(sharedPreferences),
     );
     final historyRepository = HistoryRepositoryImpl(
       HistoryLocalDataSource(sharedPreferences),
     );
-    final taskRepository = TaskRepositoryImpl(
-      TaskRemoteDataSource(ApiClient(http.Client())),
-    );
+    final taskRepository = TaskRepositoryImpl(TaskRemoteDataSource(apiClient));
+    final chatRepository = ChatRepositoryImpl(ChatRemoteDataSource(apiClient));
 
     return MultiProvider(
       providers: [
@@ -98,6 +104,11 @@ class ControlixApp extends StatelessWidget {
             saveHistory: SaveHistoryUseCase(historyRepository),
             clearHistory: ClearHistoryUseCase(historyRepository),
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ChatController(
+            sendChatMessage: SendChatMessageUseCase(chatRepository),
+          )..bootstrap(),
         ),
       ],
       child: Consumer<AppController>(

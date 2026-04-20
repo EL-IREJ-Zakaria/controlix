@@ -32,6 +32,7 @@ if ($LASTEXITCODE -ne 0) {
   --name controlix-agent `
   --hidden-import waitress `
   --hidden-import dotenv `
+  --hidden-import openai `
   run_agent.py
 if ($LASTEXITCODE -ne 0) {
   throw "PyInstaller packaging failed."

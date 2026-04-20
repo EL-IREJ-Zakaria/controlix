@@ -33,26 +33,31 @@ class TaskCard extends StatelessWidget {
 
     return GlassPanel(
       enableBlur: false,
+      padding: const EdgeInsets.all(20),
       gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: <Color>[
-          gradient.first.withValues(alpha: 0.26),
-          gradient[1].withValues(alpha: 0.18),
-          gradient.last.withValues(alpha: 0.10),
+        colors: [
+          gradient.first.withValues(alpha: 0.18),
+          gradient[1].withValues(alpha: 0.10),
+          theme.brightness == Brightness.dark
+              ? const Color(0xFF101826).withValues(alpha: 0.80)
+              : Colors.white.withValues(alpha: 0.78),
         ],
+        stops: const [0.0, 0.36, 1.0],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 54,
+                height: 54,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(colors: gradient),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(18),
                 ),
                 child: Icon(icon, color: Colors.white),
               ),
@@ -62,14 +67,16 @@ class TaskCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(task.title, style: theme.textTheme.titleLarge),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
-                      task.description,
-                      maxLines: 2,
+                      task.description.isEmpty
+                          ? 'Aucune description fournie.'
+                          : task.description,
+                      maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurface.withValues(
-                          alpha: 0.72,
+                          alpha: 0.70,
                         ),
                       ),
                     ),
@@ -79,24 +86,16 @@ class TaskCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(
-                alpha: theme.brightness == Brightness.dark ? 0.16 : 0.06,
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _TaskMetaChip(
+                icon: Icons.terminal_rounded,
+                label: 'Script masqué',
               ),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Text(
-              task.script,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontFamily: 'monospace',
-                height: 1.5,
-              ),
-            ),
+              _TaskMetaChip(icon: icon, label: task.iconName),
+            ],
           ),
           const SizedBox(height: 16),
           Row(
@@ -114,27 +113,85 @@ class TaskCard extends StatelessWidget {
                           ),
                         )
                       : const Icon(Icons.play_arrow_rounded),
-                  label: Text(isExecuting ? 'Running...' : 'Execute'),
+                  label: Text(isExecuting ? 'Exécution…' : 'Exécuter'),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               IconButton.filledTonal(
-                tooltip: 'Edit task',
+                tooltip: 'Modifier',
                 onPressed: onEdit,
                 icon: const Icon(Icons.edit_rounded),
               ),
               IconButton.filledTonal(
-                tooltip: 'Delete task',
+                tooltip: 'Supprimer',
                 onPressed: onDelete,
                 icon: const Icon(Icons.delete_outline_rounded),
               ),
             ],
           ),
           const SizedBox(height: 12),
+          Row(
+            children: [
+              Container(
+                width: 9,
+                height: 9,
+                decoration: BoxDecoration(
+                  color: gradient.first,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Mis à jour $updatedLabel',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.62),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TaskMetaChip extends StatelessWidget {
+  const _TaskMetaChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(
+          alpha: theme.brightness == Brightness.dark ? 0.16 : 0.05,
+        ),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.34),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 15,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.72),
+          ),
+          const SizedBox(width: 6),
           Text(
-            'Updated $updatedLabel',
+            label,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.66),
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],

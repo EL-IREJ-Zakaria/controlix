@@ -32,139 +32,130 @@ class ConnectionStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final foregroundColor = isDark ? Colors.white : const Color(0xFF15203D);
-    final mutedColor = foregroundColor.withValues(alpha: isDark ? 0.66 : 0.72);
     final shellGradient = hasConnectionIssue
         ? <Color>[
-            isDark ? const Color(0xFF4F2033) : const Color(0xFFF4CAD4),
-            isDark ? const Color(0xFF31172C) : const Color(0xFFE9B8C7),
-            isDark ? const Color(0xFF1D1730) : const Color(0xFFD8D3FF),
+            isDark ? const Color(0xFF341B1F) : const Color(0xFFF9DEDB),
+            isDark ? const Color(0xFF25161F) : const Color(0xFFF1D6CF),
           ]
         : <Color>[
-            isDark ? const Color(0xFF314B88) : const Color(0xFFCFDBFF),
-            isDark ? const Color(0xFF212F61) : const Color(0xFFB8C7F2),
-            isDark ? const Color(0xFF181C48) : const Color(0xFFA7B9E6),
+            isDark ? const Color(0xFF151F2D) : const Color(0xFFFFF8EF),
+            isDark ? const Color(0xFF1B2A3D) : const Color(0xFFF2E7D7),
           ];
-    final frameColor = Colors.white.withValues(alpha: isDark ? 0.10 : 0.48);
+
     final title = hasConnectionIssue
-        ? 'Windows agent needs attention'
-        : 'Windows agent ready on your LAN';
-    final description = hasConnectionIssue
-        ? 'Refresh tasks or update the route to ${config.baseUrl} before dispatching automations.'
-        : 'Route tasks to ${config.baseUrl} with a shared secret and a single tap.';
+        ? 'La liaison Windows a besoin d’attention'
+        : 'La station Windows est prête';
+    final subtitle = hasConnectionIssue
+        ? 'Le contrôleur ne récupère pas les tâches. Vérifie l’agent, la route locale ou la clé partagée.'
+        : 'Le contrôleur mobile est relié au poste Windows via le réseau local. Les tâches sont exécutées sans modifier le backend.';
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 560;
-        final titleStyle =
-            (compact
-                    ? theme.textTheme.headlineMedium
-                    : theme.textTheme.displaySmall)
-                ?.copyWith(
-                  color: foregroundColor,
-                  fontWeight: FontWeight.w700,
-                  height: 0.96,
-                  letterSpacing: -1.4,
-                );
+        final compact = constraints.maxWidth < 720;
 
         return ClipRRect(
-          borderRadius: BorderRadius.circular(compact ? 34 : 40),
+          borderRadius: BorderRadius.circular(34),
           child: Container(
-            padding: EdgeInsets.fromLTRB(
-              compact ? 18 : 28,
-              compact ? 18 : 24,
-              compact ? 18 : 28,
-              compact ? 18 : 24,
-            ),
+            padding: EdgeInsets.all(compact ? 20 : 28),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: shellGradient,
               ),
-              borderRadius: BorderRadius.circular(compact ? 34 : 40),
-              border: Border.all(color: frameColor),
+              borderRadius: BorderRadius.circular(34),
+              border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.44),
+              ),
               boxShadow: <BoxShadow>[
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.36 : 0.12),
-                  blurRadius: 40,
-                  offset: const Offset(0, 24),
+                  color: Colors.black.withValues(alpha: isDark ? 0.28 : 0.08),
+                  blurRadius: 34,
+                  offset: const Offset(0, 20),
                 ),
               ],
             ),
             child: Stack(
               children: [
                 Positioned(
-                  top: -44,
-                  right: -10,
-                  child: _Halo(
-                    size: compact ? 160 : 220,
-                    color: Colors.white.withValues(alpha: isDark ? 0.08 : 0.18),
-                  ),
-                ),
-                Positioned(
-                  bottom: -60,
-                  left: -30,
-                  child: _Halo(
-                    size: compact ? 190 : 240,
-                    color:
-                        (hasConnectionIssue
-                                ? const Color(0xFFFF7C93)
-                                : const Color(0xFF79A8FF))
-                            .withValues(alpha: isDark ? 0.14 : 0.20),
+                  top: -50,
+                  right: -20,
+                  child: _CardGlow(
+                    size: compact ? 150 : 220,
+                    color: theme.colorScheme.primary.withValues(alpha: 0.14),
                   ),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _CardHeader(
+                    _TopActions(
                       statusLabel: statusLabel,
-                      isDark: isDark,
                       hasConnectionIssue: hasConnectionIssue,
-                      foregroundColor: foregroundColor,
+                      themeMode: themeMode,
                       isRefreshing: isRefreshing,
                       onRefresh: onRefresh,
                       onEditConnection: onEditConnection,
-                      themeMode: themeMode,
                       onThemeChanged: onThemeChanged,
                     ),
-                    SizedBox(height: compact ? 28 : 34),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: compact ? 190 : 360,
-                      ),
-                      child: Text(title, style: titleStyle),
+                    SizedBox(height: compact ? 24 : 28),
+                    Text(
+                      title,
+                      style: compact
+                          ? theme.textTheme.displaySmall
+                          : theme.textTheme.displayLarge?.copyWith(
+                              fontSize: 46,
+                            ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
                     ConstrainedBox(
                       constraints: BoxConstraints(
-                        maxWidth: compact ? 170 : 340,
+                        maxWidth: compact ? 460 : 620,
                       ),
                       child: Text(
-                        description,
+                        subtitle,
                         style: theme.textTheme.bodyLarge?.copyWith(
-                          color: mutedColor,
-                          height: 1.45,
-                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.72,
+                          ),
                         ),
                       ),
                     ),
-                    SizedBox(height: compact ? 28 : 34),
+                    SizedBox(height: compact ? 24 : 30),
                     if (compact)
-                      _CompactFooter(
-                        config: config,
-                        taskCount: taskCount,
-                        onCreateTask: onCreateTask,
-                        foregroundColor: foregroundColor,
-                        isDark: isDark,
+                      Column(
+                        children: [
+                          _MetricsRow(config: config, taskCount: taskCount),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: onCreateTask,
+                              icon: const Icon(Icons.add_rounded),
+                              label: const Text('Créer une tâche'),
+                            ),
+                          ),
+                        ],
                       )
                     else
-                      _WideFooter(
-                        config: config,
-                        taskCount: taskCount,
-                        onCreateTask: onCreateTask,
-                        foregroundColor: foregroundColor,
-                        isDark: isDark,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: _MetricsRow(
+                              config: config,
+                              taskCount: taskCount,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          SizedBox(
+                            width: 220,
+                            child: FilledButton.icon(
+                              onPressed: onCreateTask,
+                              icon: const Icon(Icons.add_rounded),
+                              label: const Text('Nouvelle tâche'),
+                            ),
+                          ),
+                        ],
                       ),
                   ],
                 ),
@@ -177,76 +168,133 @@ class ConnectionStatusCard extends StatelessWidget {
   }
 }
 
-class _CardHeader extends StatelessWidget {
-  const _CardHeader({
+class _TopActions extends StatelessWidget {
+  const _TopActions({
     required this.statusLabel,
-    required this.isDark,
     required this.hasConnectionIssue,
-    required this.foregroundColor,
+    required this.themeMode,
     required this.isRefreshing,
     required this.onRefresh,
     required this.onEditConnection,
-    required this.themeMode,
     required this.onThemeChanged,
   });
 
   final String statusLabel;
-  final bool isDark;
   final bool hasConnectionIssue;
-  final Color foregroundColor;
+  final ThemeMode themeMode;
   final bool isRefreshing;
   final VoidCallback onRefresh;
   final VoidCallback onEditConnection;
-  final ThemeMode themeMode;
   final ValueChanged<ThemeMode> onThemeChanged;
 
   @override
   Widget build(BuildContext context) {
-    final actions = Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        _ActionButton(
-          tooltip: 'Refresh tasks',
-          onPressed: isRefreshing ? null : onRefresh,
-          child: isRefreshing
-              ? SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(foregroundColor),
-                  ),
-                )
-              : Icon(Icons.refresh_rounded, color: foregroundColor, size: 20),
-        ),
-        _ActionButton(
-          tooltip: 'Edit connection',
-          onPressed: onEditConnection,
-          child: Icon(Icons.router_rounded, color: foregroundColor, size: 20),
-        ),
-        _ThemeModeButton(
-          themeMode: themeMode,
-          foregroundColor: foregroundColor,
-          onThemeChanged: onThemeChanged,
-        ),
-      ],
-    );
+    final theme = Theme.of(context);
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final stackedHeader = constraints.maxWidth < 430;
+        final stacked = constraints.maxWidth < 520;
 
-        if (stackedHeader) {
+        final actions = Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            _ActionButton(
+              tooltip: 'Rafraîchir',
+              onTap: isRefreshing ? null : onRefresh,
+              child: isRefreshing
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Icon(
+                      Icons.refresh_rounded,
+                      size: 20,
+                      color: theme.colorScheme.onSurface,
+                    ),
+            ),
+            _ActionButton(
+              tooltip: 'Modifier la connexion',
+              onTap: onEditConnection,
+              child: Icon(
+                Icons.router_rounded,
+                size: 20,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            PopupMenuButton<ThemeMode>(
+              tooltip: 'Thème',
+              onSelected: onThemeChanged,
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: ThemeMode.system,
+                  child: Text('Suivre le système'),
+                ),
+                PopupMenuItem(value: ThemeMode.light, child: Text('Clair')),
+                PopupMenuItem(value: ThemeMode.dark, child: Text('Sombre')),
+              ],
+              child: _ActionButton(
+                tooltip: 'Thème',
+                onTap: null,
+                child: Icon(
+                  switch (themeMode) {
+                    ThemeMode.light => Icons.light_mode_rounded,
+                    ThemeMode.dark => Icons.dark_mode_rounded,
+                    ThemeMode.system => Icons.brightness_auto_rounded,
+                  },
+                  size: 20,
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+        );
+
+        final pill = Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: hasConnectionIssue
+                ? const Color(0xFFEF4444).withValues(alpha: 0.12)
+                : theme.colorScheme.secondary.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: hasConnectionIssue
+                  ? const Color(0xFFEF4444).withValues(alpha: 0.24)
+                  : theme.colorScheme.secondary.withValues(alpha: 0.24),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                hasConnectionIssue
+                    ? Icons.warning_amber_rounded
+                    : Icons.verified_rounded,
+                size: 18,
+                color: hasConnectionIssue
+                    ? const Color(0xFFEF4444)
+                    : theme.colorScheme.secondary,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                statusLabel,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        );
+
+        if (stacked) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _StatusPill(
-                label: statusLabel,
-                isDark: isDark,
-                hasConnectionIssue: hasConnectionIssue,
-                foregroundColor: foregroundColor,
-              ),
+              pill,
               const SizedBox(height: 12),
               Align(alignment: Alignment.centerRight, child: actions),
             ],
@@ -256,14 +304,7 @@ class _CardHeader extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _StatusPill(
-                label: statusLabel,
-                isDark: isDark,
-                hasConnectionIssue: hasConnectionIssue,
-                foregroundColor: foregroundColor,
-              ),
-            ),
+            Expanded(child: pill),
             const SizedBox(width: 12),
             actions,
           ],
@@ -273,257 +314,99 @@ class _CardHeader extends StatelessWidget {
   }
 }
 
-class _CompactFooter extends StatelessWidget {
-  const _CompactFooter({
-    required this.config,
-    required this.taskCount,
-    required this.onCreateTask,
-    required this.foregroundColor,
-    required this.isDark,
-  });
+class _MetricsRow extends StatelessWidget {
+  const _MetricsRow({required this.config, required this.taskCount});
 
   final ConnectionConfig config;
   final int taskCount;
-  final VoidCallback onCreateTask;
-  final Color foregroundColor;
-  final bool isDark;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
       children: [
-        FractionallySizedBox(
-          widthFactor: 0.54,
-          child: _InfoChip(
-            icon: Icons.device_hub_rounded,
-            label: config.ipAddress,
-            value: 'Port ${config.port}',
-            foregroundColor: foregroundColor,
-            isDark: isDark,
-          ),
+        _MetricTile(
+          icon: Icons.dns_rounded,
+          label: 'Endpoint',
+          value: '${config.ipAddress}:${config.port}',
         ),
-        const SizedBox(height: 12),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: _InfoChip(
-                icon: Icons.dashboard_customize_rounded,
-                label: '$taskCount tasks',
-                value: 'Synced from agent',
-                foregroundColor: foregroundColor,
-                isDark: isDark,
-              ),
-            ),
-            const SizedBox(width: 12),
-            SizedBox(
-              width: 150,
-              child: _CreateTaskButton(onPressed: onCreateTask),
-            ),
-          ],
+        _MetricTile(
+          icon: Icons.dashboard_customize_rounded,
+          label: 'Tâches',
+          value: '$taskCount synchronisées',
+        ),
+        const _MetricTile(
+          icon: Icons.key_rounded,
+          label: 'Authentification',
+          value: 'Clé locale active',
         ),
       ],
     );
   }
 }
 
-class _WideFooter extends StatelessWidget {
-  const _WideFooter({
-    required this.config,
-    required this.taskCount,
-    required this.onCreateTask,
-    required this.foregroundColor,
-    required this.isDark,
-  });
-
-  final ConnectionConfig config;
-  final int taskCount;
-  final VoidCallback onCreateTask;
-  final Color foregroundColor;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(
-          child: Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              SizedBox(
-                width: 210,
-                child: _InfoChip(
-                  icon: Icons.device_hub_rounded,
-                  label: config.ipAddress,
-                  value: 'Port ${config.port}',
-                  foregroundColor: foregroundColor,
-                  isDark: isDark,
-                ),
-              ),
-              SizedBox(
-                width: 210,
-                child: _InfoChip(
-                  icon: Icons.dashboard_customize_rounded,
-                  label: '$taskCount tasks',
-                  value: 'Synced from agent',
-                  foregroundColor: foregroundColor,
-                  isDark: isDark,
-                ),
-              ),
-              SizedBox(
-                width: 210,
-                child: _InfoChip(
-                  icon: Icons.key_rounded,
-                  label: 'Shared secret',
-                  value: 'Stored locally',
-                  foregroundColor: foregroundColor,
-                  isDark: isDark,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 16),
-        SizedBox(width: 188, child: _CreateTaskButton(onPressed: onCreateTask)),
-      ],
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({
+    required this.icon,
     required this.label,
-    required this.isDark,
-    required this.hasConnectionIssue,
-    required this.foregroundColor,
+    required this.value,
   });
 
+  final IconData icon;
   final String label;
-  final bool isDark;
-  final bool hasConnectionIssue;
-  final Color foregroundColor;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = hasConnectionIssue
-        ? const Color(0xFFFB7185)
-        : const Color(0xFF22C55E);
-    final labelColor = hasConnectionIssue ? foregroundColor : Colors.white;
-
+    final theme = Theme.of(context);
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      constraints: const BoxConstraints(minWidth: 180),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: hasConnectionIssue
-            ? null
-            : const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: <Color>[Color(0xFF22C55E), Color(0xFF16A34A)],
-              ),
-        color: hasConnectionIssue
-            ? statusColor.withValues(alpha: isDark ? 0.20 : 0.28)
-            : null,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: hasConnectionIssue
-              ? Colors.white.withValues(alpha: isDark ? 0.10 : 0.52)
-              : statusColor.withValues(alpha: 0.84),
+        color: Colors.black.withValues(
+          alpha: theme.brightness == Brightness.dark ? 0.18 : 0.05,
         ),
-        boxShadow: hasConnectionIssue
-            ? null
-            : const <BoxShadow>[
-                BoxShadow(
-                  color: Color(0x3322C55E),
-                  blurRadius: 16,
-                  offset: Offset(0, 8),
-                ),
-              ],
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.42),
+        ),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            hasConnectionIssue
-                ? Icons.warning_amber_rounded
-                : Icons.check_circle_rounded,
-            size: 18,
-            color: labelColor,
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, size: 18, color: theme.colorScheme.primary),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: labelColor,
-                fontWeight: FontWeight.w700,
-              ),
+          const SizedBox(width: 12),
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.56),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ThemeModeButton extends StatelessWidget {
-  const _ThemeModeButton({
-    required this.themeMode,
-    required this.foregroundColor,
-    required this.onThemeChanged,
-  });
-
-  final ThemeMode themeMode;
-  final Color foregroundColor;
-  final ValueChanged<ThemeMode> onThemeChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<ThemeMode>(
-      tooltip: 'Theme mode',
-      onSelected: onThemeChanged,
-      itemBuilder: (context) {
-        return const [
-          PopupMenuItem(value: ThemeMode.system, child: Text('Follow system')),
-          PopupMenuItem(value: ThemeMode.light, child: Text('Light mode')),
-          PopupMenuItem(value: ThemeMode.dark, child: Text('Dark mode')),
-        ];
-      },
-      child: _ActionFrame(
-        child: Icon(
-          switch (themeMode) {
-            ThemeMode.light => Icons.light_mode_rounded,
-            ThemeMode.dark => Icons.dark_mode_rounded,
-            ThemeMode.system => Icons.brightness_auto_rounded,
-          },
-          color: foregroundColor,
-          size: 20,
-        ),
-      ),
-    );
-  }
-}
-
-class _ActionFrame extends StatelessWidget {
-  const _ActionFrame({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-      ),
-      child: Center(child: child),
     );
   }
 }
@@ -532,12 +415,12 @@ class _ActionButton extends StatelessWidget {
   const _ActionButton({
     required this.tooltip,
     required this.child,
-    this.onPressed,
+    required this.onTap,
   });
 
   final String tooltip;
   final Widget child;
-  final VoidCallback? onPressed;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -546,128 +429,25 @@ class _ActionButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onPressed,
-          child: _ActionFrame(child: child),
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoChip extends StatelessWidget {
-  const _InfoChip({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.foregroundColor,
-    required this.isDark,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color foregroundColor;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: isDark ? 0.11 : 0.52),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.10)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
+          borderRadius: BorderRadius.circular(18),
+          onTap: onTap,
+          child: Container(
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: isDark ? 0.10 : 0.36),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, size: 17, color: foregroundColor),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: foregroundColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: foregroundColor.withValues(alpha: 0.64),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CreateTaskButton extends StatelessWidget {
-  const _CreateTaskButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(24),
-        onTap: onPressed,
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: <Color>[Color(0xFF5A83D1), Color(0xFF4669B6)],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: const <BoxShadow>[
-              BoxShadow(
-                color: Color(0x3322396A),
-                blurRadius: 20,
-                offset: Offset(0, 12),
+              color: Colors.black.withValues(
+                alpha: Theme.of(context).brightness == Brightness.dark
+                    ? 0.20
+                    : 0.05,
               ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.add_rounded, color: Colors.white, size: 21),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Text(
-                  'New task',
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: Theme.of(
+                  context,
+                ).colorScheme.outline.withValues(alpha: 0.40),
               ),
-            ],
+            ),
+            child: Center(child: child),
           ),
         ),
       ),
@@ -675,8 +455,8 @@ class _CreateTaskButton extends StatelessWidget {
   }
 }
 
-class _Halo extends StatelessWidget {
-  const _Halo({required this.size, required this.color});
+class _CardGlow extends StatelessWidget {
+  const _CardGlow({required this.size, required this.color});
 
   final double size;
   final Color color;
@@ -689,9 +469,7 @@ class _Halo extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: <Color>[color, color.withValues(alpha: 0)],
-          ),
+          gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
         ),
       ),
     );

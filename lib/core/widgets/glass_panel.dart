@@ -7,9 +7,9 @@ class GlassPanel extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(24),
-    this.borderRadius = 28,
+    this.borderRadius = 30,
     this.gradient,
-    this.blurSigma = 12,
+    this.blurSigma = 14,
     this.enableBlur = true,
   });
 
@@ -22,38 +22,52 @@ class GlassPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark
-        ? Colors.white.withValues(alpha: 0.10)
-        : Colors.white.withValues(alpha: 0.78);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final panelGradient =
+        gradient ??
+        LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: <Color>[
+            isDark
+                ? const Color(0xFF121B29).withValues(alpha: 0.88)
+                : Colors.white.withValues(alpha: 0.84),
+            isDark
+                ? const Color(0xFF0F1724).withValues(alpha: 0.76)
+                : const Color(0xFFF7F1E8).withValues(alpha: 0.78),
+          ],
+        );
+
     final panel = Container(
       padding: padding,
       decoration: BoxDecoration(
-        gradient:
-            gradient ??
-            LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: <Color>[
-                surfaceColor,
-                surfaceColor.withValues(alpha: isDark ? 0.07 : 0.58),
-              ],
-            ),
+        gradient: panelGradient,
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(
           color: isDark
               ? Colors.white.withValues(alpha: 0.08)
-              : Colors.black.withValues(alpha: 0.05),
+              : theme.colorScheme.outline.withValues(alpha: 0.54),
         ),
         boxShadow: <BoxShadow>[
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.07),
-            blurRadius: 24,
-            offset: const Offset(0, 16),
+            color: Colors.black.withValues(alpha: isDark ? 0.26 : 0.09),
+            blurRadius: 34,
+            offset: const Offset(0, 20),
           ),
         ],
       ),
-      child: child,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(borderRadius - 2),
+          border: Border(
+            top: BorderSide(
+              color: Colors.white.withValues(alpha: isDark ? 0.07 : 0.44),
+            ),
+          ),
+        ),
+        child: child,
+      ),
     );
 
     return ClipRRect(

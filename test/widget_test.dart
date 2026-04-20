@@ -12,7 +12,7 @@ void main() {
     await tester.pumpWidget(ControlixApp(sharedPreferences: sharedPreferences));
     await tester.pumpAndSettle();
 
-    expect(find.text('Connect your Windows agent'), findsOneWidget);
-    expect(find.text('Save & connect'), findsOneWidget);
+    expect(find.text('Connecter le mobile\nau poste Windows'), findsOneWidget);
+    expect(find.text('Sauvegarder et tester'), findsOneWidget);
   });
 }

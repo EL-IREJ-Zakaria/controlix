@@ -77,44 +77,15 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
     );
   }
 
-  InputDecoration _inputDecoration({
-    required String hintText,
+  InputDecoration _decoration({
+    required String label,
+    String? hint,
     Widget? prefixIcon,
   }) {
     return InputDecoration(
-      hintText: hintText,
-      hintStyle: const TextStyle(
-        color: Color(0x9ECFD3E6),
-        fontSize: 17,
-        fontWeight: FontWeight.w500,
-      ),
+      labelText: label,
+      hintText: hint,
       prefixIcon: prefixIcon,
-      filled: true,
-      fillColor: const Color(0xFF3A3D4E).withValues(alpha: 0.82),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 22),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: BorderSide(
-          color: colorFromHex(_selectedAccent).withValues(alpha: 0.72),
-          width: 1.4,
-        ),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: const BorderSide(color: Color(0xFFF87171), width: 1.1),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(20),
-        borderSide: const BorderSide(color: Color(0xFFF87171), width: 1.4),
-      ),
     );
   }
 
@@ -126,26 +97,34 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
     final accentColor = colorFromHex(_selectedAccent);
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(14, 16, 14, 14 + bottomInset),
+      padding: EdgeInsets.fromLTRB(14, 18, 14, 14 + bottomInset),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(34),
         child: Container(
-          constraints: BoxConstraints(maxHeight: size.height * 0.96),
+          constraints: BoxConstraints(maxHeight: size.height * 0.94),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: <Color>[
-                Color(0xFF2B2F3D),
-                Color(0xFF242837),
-                Color(0xFF1C202D),
-              ],
+              colors: theme.brightness == Brightness.dark
+                  ? const [
+                      Color(0xFF0E1521),
+                      Color(0xFF131E2D),
+                      Color(0xFF1A2838),
+                    ]
+                  : const [
+                      Color(0xFFFFFBF5),
+                      Color(0xFFF2E8DB),
+                      Color(0xFFEDE3D5),
+                    ],
             ),
             borderRadius: BorderRadius.circular(34),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            border: Border.all(
+              color: theme.colorScheme.outline.withValues(alpha: 0.44),
+            ),
             boxShadow: <BoxShadow>[
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.34),
+                color: Colors.black.withValues(alpha: 0.26),
                 blurRadius: 34,
                 offset: const Offset(0, 20),
               ),
@@ -154,201 +133,189 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
           child: Stack(
             children: [
               Positioned(
-                top: -48,
-                right: -26,
-                child: _GlowOrb(
+                top: -46,
+                right: -14,
+                child: _SheetGlow(
                   size: 180,
-                  color: Colors.white.withValues(alpha: 0.08),
-                ),
-              ),
-              Positioned(
-                bottom: 120,
-                right: 18,
-                child: _GlowOrb(
-                  size: 140,
                   color: accentColor.withValues(alpha: 0.16),
                 ),
               ),
               Column(
                 children: [
                   Expanded(
-                    child: Theme(
-                      data: theme.copyWith(
-                        inputDecorationTheme: theme.inputDecorationTheme,
-                        dividerColor: Colors.transparent,
-                      ),
-                      child: Form(
-                        key: _formKey,
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      widget.initialTask == null
-                                          ? 'Create task'
-                                          : 'Edit task',
-                                      style: theme.textTheme.displaySmall
-                                          ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: -1.2,
-                                          ),
-                                    ),
+                    child: Form(
+                      key: _formKey,
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        widget.initialTask == null
+                                            ? 'Nouvelle tâche'
+                                            : 'Modifier la tâche',
+                                        style: theme.textTheme.displaySmall,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Le backend reste inchangé: tu modifies uniquement la présentation de la tâche et le script transmis à l’agent.',
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: theme.colorScheme.onSurface
+                                                  .withValues(alpha: 0.66),
+                                            ),
+                                      ),
+                                    ],
                                   ),
-                                  _TopIconButton(
-                                    icon: Icons.close_rounded,
-                                    onTap: () => Navigator.of(context).pop(),
+                                ),
+                                const SizedBox(width: 16),
+                                IconButton.filledTonal(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  icon: const Icon(Icons.close_rounded),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 22),
+                            TextFormField(
+                              controller: _titleController,
+                              textInputAction: TextInputAction.next,
+                              validator: (value) =>
+                                  Validators.validateRequired(value, 'Title'),
+                              decoration: _decoration(
+                                label: 'Titre',
+                                hint: 'Restart Explorer',
+                                prefixIcon: const Icon(Icons.title_rounded),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _descriptionController,
+                              textInputAction: TextInputAction.next,
+                              maxLines: 2,
+                              decoration: _decoration(
+                                label: 'Description',
+                                hint: 'Décrit brièvement le comportement',
+                                prefixIcon: const Icon(Icons.notes_rounded),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text('Icône', style: theme.textTheme.titleMedium),
+                            const SizedBox(height: 10),
+                            DropdownButtonFormField<String>(
+                              initialValue: _selectedIcon,
+                              isExpanded: true,
+                              dropdownColor: theme.colorScheme.surface,
+                              items: TaskVisuals.iconMap.entries.map((entry) {
+                                return DropdownMenuItem<String>(
+                                  value: entry.key,
+                                  child: Row(
+                                    children: [
+                                      Icon(entry.value, size: 18),
+                                      const SizedBox(width: 12),
+                                      Text(entry.key),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() => _selectedIcon = value);
+                                }
+                              },
+                              decoration: _decoration(
+                                label: 'Icône de la tâche',
+                                prefixIcon: const Icon(Icons.apps_rounded),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Text(
+                              'Couleur d’accent',
+                              style: theme.textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 12,
+                              runSpacing: 12,
+                              children: TaskVisuals.accentPalette.map((accent) {
+                                final isSelected = accent == _selectedAccent;
+                                return _AccentSwatch(
+                                  color: colorFromHex(accent),
+                                  isSelected: isSelected,
+                                  onTap: () =>
+                                      setState(() => _selectedAccent = accent),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 22),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(18),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(
+                                  alpha: theme.brightness == Brightness.dark
+                                      ? 0.18
+                                      : 0.05,
+                                ),
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                  color: theme.colorScheme.outline.withValues(
+                                    alpha: 0.38,
+                                  ),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Script PowerShell',
+                                        style: theme.textTheme.titleMedium
+                                            ?.copyWith(color: accentColor),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        '${_scriptController.text.trim().length} caractères',
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: theme.colorScheme.onSurface
+                                                  .withValues(alpha: 0.52),
+                                            ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  TextFormField(
+                                    controller: _scriptController,
+                                    minLines: 8,
+                                    maxLines: 12,
+                                    onChanged: (_) => setState(() {}),
+                                    validator: (value) =>
+                                        Validators.validateRequired(
+                                          value,
+                                          'PowerShell script',
+                                        ),
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontFamily: 'monospace',
+                                      height: 1.55,
+                                    ),
+                                    decoration: _decoration(
+                                      label: 'Script',
+                                      hint:
+                                          'Stop-Process -Name explorer -Force; Start-Process explorer.exe',
+                                    ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 10),
-                              Text(
-                                'Each task stores its PowerShell script on the Windows agent and can be executed with one tap.',
-                                style: theme.textTheme.bodyLarge?.copyWith(
-                                  color: const Color(0xB8D2D7E6),
-                                  height: 1.45,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 22),
-                              TextFormField(
-                                controller: _titleController,
-                                textInputAction: TextInputAction.next,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                validator: (value) =>
-                                    Validators.validateRequired(value, 'Title'),
-                                decoration: _inputDecoration(
-                                  hintText: 'Task title',
-                                ),
-                              ),
-                              const SizedBox(height: 14),
-                              TextFormField(
-                                controller: _descriptionController,
-                                textInputAction: TextInputAction.next,
-                                maxLines: 2,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                decoration: _inputDecoration(
-                                  hintText: 'Description',
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              const _SectionLabel('Task icon'),
-                              const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                initialValue: _selectedIcon,
-                                isExpanded: true,
-                                dropdownColor: const Color(0xFF2E3242),
-                                iconEnabledColor: const Color(0xFFD5DBEE),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                decoration: _inputDecoration(
-                                  hintText: 'Task icon',
-                                ),
-                                items: TaskVisuals.iconMap.entries.map((entry) {
-                                  return DropdownMenuItem<String>(
-                                    value: entry.key,
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          entry.value,
-                                          size: 18,
-                                          color: Colors.white,
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(entry.key),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  if (value != null) {
-                                    setState(() => _selectedIcon = value);
-                                  }
-                                },
-                              ),
-                              const SizedBox(height: 18),
-                              const _SectionLabel('Accent color'),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 14,
-                                runSpacing: 14,
-                                children: TaskVisuals.accentPalette.map((
-                                  accent,
-                                ) {
-                                  final isSelected = accent == _selectedAccent;
-                                  final color = colorFromHex(accent);
-                                  return _AccentSwatch(
-                                    color: color,
-                                    isSelected: isSelected,
-                                    onTap: () => setState(
-                                      () => _selectedAccent = accent,
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                              const SizedBox(height: 18),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF343844,
-                                  ).withValues(alpha: 0.82),
-                                  borderRadius: BorderRadius.circular(24),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.04),
-                                  ),
-                                ),
-                                child: TextFormField(
-                                  controller: _scriptController,
-                                  minLines: 7,
-                                  maxLines: 11,
-                                  validator: (value) =>
-                                      Validators.validateRequired(
-                                        value,
-                                        'PowerShell script',
-                                      ),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    height: 1.5,
-                                  ),
-                                  decoration:
-                                      _inputDecoration(
-                                        hintText: 'PowerShell script',
-                                      ).copyWith(
-                                        fillColor: Colors.transparent,
-                                        border: InputBorder.none,
-                                        enabledBorder: InputBorder.none,
-                                        focusedBorder: InputBorder.none,
-                                        errorBorder: InputBorder.none,
-                                        focusedErrorBorder: InputBorder.none,
-                                        contentPadding:
-                                            const EdgeInsets.fromLTRB(
-                                              22,
-                                              26,
-                                              22,
-                                              26,
-                                            ),
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -357,45 +324,25 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        final useColumn = constraints.maxWidth < 310;
-                        final buttons = <Widget>[
-                          Expanded(
-                            child: _SheetActionButton(
-                              label: 'Cancel',
-                              onTap: () => Navigator.of(context).pop(),
-                            ),
-                          ),
-                          Expanded(
-                            child: _SheetActionButton(
-                              label: 'Save task',
-                              icon: Icons.save_rounded,
-                              accentColor: accentColor,
-                              isPrimary: true,
-                              onTap: _submit,
-                            ),
-                          ),
-                        ];
+                        final stacked = constraints.maxWidth < 340;
 
-                        if (useColumn) {
+                        if (stacked) {
                           return Column(
-                            mainAxisSize: MainAxisSize.min,
                             children: [
                               SizedBox(
                                 width: double.infinity,
-                                child: _SheetActionButton(
-                                  label: 'Cancel',
-                                  onTap: () => Navigator.of(context).pop(),
+                                child: OutlinedButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text('Annuler'),
                                 ),
                               ),
                               const SizedBox(height: 12),
                               SizedBox(
                                 width: double.infinity,
-                                child: _SheetActionButton(
-                                  label: 'Save task',
-                                  icon: Icons.save_rounded,
-                                  accentColor: accentColor,
-                                  isPrimary: true,
-                                  onTap: _submit,
+                                child: FilledButton.icon(
+                                  onPressed: _submit,
+                                  icon: const Icon(Icons.save_rounded),
+                                  label: const Text('Enregistrer'),
                                 ),
                               ),
                             ],
@@ -404,9 +351,20 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
 
                         return Row(
                           children: [
-                            buttons.first,
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text('Annuler'),
+                              ),
+                            ),
                             const SizedBox(width: 12),
-                            buttons.last,
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: _submit,
+                                icon: const Icon(Icons.save_rounded),
+                                label: const Text('Enregistrer'),
+                              ),
+                            ),
                           ],
                         );
                       },
@@ -416,51 +374,6 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-        color: const Color(0xFFD9DDED),
-        fontWeight: FontWeight.w700,
-      ),
-    );
-  }
-}
-
-class _TopIconButton extends StatelessWidget {
-  const _TopIconButton({required this.icon, required this.onTap});
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-          ),
-          child: Icon(icon, color: const Color(0xFFD3D8E8)),
         ),
       ),
     );
@@ -485,29 +398,29 @@ class _AccentSwatch extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        width: 44,
-        height: 44,
+        width: 46,
+        height: 46,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: <Color>[
-              color.withValues(alpha: 0.92),
-              Color.lerp(color, Colors.white, 0.12) ?? color,
+            colors: [
+              color.withValues(alpha: 0.96),
+              Color.lerp(color, Colors.white, 0.16) ?? color,
             ],
           ),
           border: Border.all(
             color: isSelected
                 ? Colors.white
-                : Colors.white.withValues(alpha: 0.12),
+                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.38),
             width: isSelected ? 3 : 1.2,
           ),
           boxShadow: <BoxShadow>[
             BoxShadow(
-              color: color.withValues(alpha: 0.34),
-              blurRadius: isSelected ? 22 : 16,
-              offset: const Offset(0, 8),
+              color: color.withValues(alpha: 0.28),
+              blurRadius: isSelected ? 22 : 14,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
@@ -516,90 +429,8 @@ class _AccentSwatch extends StatelessWidget {
   }
 }
 
-class _SheetActionButton extends StatelessWidget {
-  const _SheetActionButton({
-    required this.label,
-    required this.onTap,
-    this.icon,
-    this.accentColor,
-    this.isPrimary = false,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final IconData? icon;
-  final Color? accentColor;
-  final bool isPrimary;
-
-  @override
-  Widget build(BuildContext context) {
-    final baseColor = accentColor ?? const Color(0xFF43485A);
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
-          decoration: BoxDecoration(
-            gradient: isPrimary
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: <Color>[
-                      Color.lerp(baseColor, Colors.white, 0.08) ?? baseColor,
-                      baseColor,
-                    ],
-                  )
-                : null,
-            color: isPrimary ? null : const Color(0xFF3A3F50),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isPrimary
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.white.withValues(alpha: 0.05),
-            ),
-            boxShadow: isPrimary
-                ? <BoxShadow>[
-                    BoxShadow(
-                      color: baseColor.withValues(alpha: 0.30),
-                      blurRadius: 18,
-                      offset: const Offset(0, 10),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (icon != null) ...[
-                Icon(icon, color: Colors.white, size: 18),
-                const SizedBox(width: 8),
-              ],
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GlowOrb extends StatelessWidget {
-  const _GlowOrb({required this.size, required this.color});
+class _SheetGlow extends StatelessWidget {
+  const _SheetGlow({required this.size, required this.color});
 
   final double size;
   final Color color;
@@ -612,9 +443,7 @@ class _GlowOrb extends StatelessWidget {
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: <Color>[color, color.withValues(alpha: 0)],
-          ),
+          gradient: RadialGradient(colors: [color, color.withValues(alpha: 0)]),
         ),
       ),
     );
