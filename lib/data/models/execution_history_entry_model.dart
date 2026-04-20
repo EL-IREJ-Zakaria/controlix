@@ -1,3 +1,4 @@
+import '../../core/utils/powershell_output_formatter.dart';
 import '../../domain/entities/execution_history_entry.dart';
 
 class ExecutionHistoryEntryModel extends ExecutionHistoryEntry {
@@ -31,7 +32,9 @@ class ExecutionHistoryEntryModel extends ExecutionHistoryEntry {
       taskId: json['task_id'] as String? ?? '',
       taskTitle: json['task_title'] as String? ?? 'Task',
       success: json['success'] as bool? ?? false,
-      output: json['output'] as String? ?? '',
+      output: PowerShellOutputFormatter.sanitize(
+        json['output'] as String? ?? '',
+      ),
       errorCode: json['error_code'] as int? ?? -1,
       executedAt:
           DateTime.tryParse(json['executed_at'] as String? ?? '')?.toLocal() ??

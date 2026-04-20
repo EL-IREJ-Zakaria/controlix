@@ -145,6 +145,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         final theme = Theme.of(context);
+        final displayOutput = result.output.isEmpty
+            ? result.success
+                  ? 'Task completed successfully.'
+                  : 'Execution finished without any output.'
+            : result.output;
+
         return Padding(
           padding: EdgeInsets.fromLTRB(
             20,
@@ -152,65 +158,76 @@ class _DashboardScreenState extends State<DashboardScreen> {
             20,
             20 + MediaQuery.viewInsetsOf(context).bottom,
           ),
-          child: GlassPanel(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        result.taskTitle,
-                        style: theme.textTheme.headlineMedium,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * 0.82,
+            ),
+            child: GlassPanel(
+              child: Scrollbar(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              result.taskTitle,
+                              style: theme.textTheme.headlineMedium,
+                            ),
+                          ),
+                          Icon(
+                            result.success
+                                ? Icons.check_circle_rounded
+                                : Icons.error_rounded,
+                            color: result.success
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFFEF4444),
+                          ),
+                        ],
                       ),
-                    ),
-                    Icon(
-                      result.success
-                          ? Icons.check_circle_rounded
-                          : Icons.error_rounded,
-                      color: result.success
-                          ? const Color(0xFF10B981)
-                          : const Color(0xFFEF4444),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Exit code ${result.errorCode} - ${result.durationMs} ms',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.68),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Exit code ${result.errorCode} - ${result.durationMs} ms',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.68,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(
+                            alpha: theme.brightness == Brightness.dark
+                                ? 0.22
+                                : 0.06,
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: SelectableText(
+                          displayOutput,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontFamily: 'monospace',
+                            height: 1.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Close'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 18),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(
-                      alpha: theme.brightness == Brightness.dark ? 0.22 : 0.06,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: SelectableText(
-                    result.output.isEmpty
-                        ? 'No output returned.'
-                        : result.output,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontFamily: 'monospace',
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Close'),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         );

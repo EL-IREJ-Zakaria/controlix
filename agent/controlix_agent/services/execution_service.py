@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import base64
+import html
 import json
+import re
 import subprocess
 import threading
 import time
@@ -30,7 +32,10 @@ class ExecutionService:
         return history[:bounded_limit]
 
     def _run_script(self, script: str, task_title: str, task_id: str) -> dict:
-        encoded_script = base64.b64encode(script.encode("utf-16-le")).decode("ascii")
+        prepared_script = "$ProgressPreference = 'SilentlyContinue'\n" + script
+        encoded_script = base64.b64encode(
+            prepared_script.encode("utf-16-le")
+        ).decode("ascii")
         command = [
             "powershell.exe",
             "-NoLogo",
@@ -53,13 +58,21 @@ class ExecutionService:
                 shell=False,
                 check=False,
             )
-            stdout = (completed.stdout or "").strip()
-            stderr = (completed.stderr or "").strip()
+            stdout = _clean_powershell_output(completed.stdout or "")
+            stderr = _clean_powershell_output(completed.stderr or "")
             error_code = completed.returncode
             success = error_code == 0
         except subprocess.TimeoutExpired as error:
-            stdout = (error.stdout or "").strip() if isinstance(error.stdout, str) else ""
-            stderr = (error.stderr or "").strip() if isinstance(error.stderr, str) else ""
+            stdout = (
+                _clean_powershell_output(error.stdout)
+                if isinstance(error.stdout, str)
+                else ""
+            )
+            stderr = (
+                _clean_powershell_output(error.stderr)
+                if isinstance(error.stderr, str)
+                else ""
+            )
             if not stderr:
                 stderr = (
                     f"Execution exceeded the {self._settings.execution_timeout}-second timeout."
@@ -116,3 +129,36 @@ class ExecutionService:
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+_CLIXML_ERROR_PATTERN = re.compile(r'<S S="Error">(.*?)</S>', re.DOTALL)
+
+
+def _clean_powershell_output(text: str) -> str:
+    cleaned = (text or "").strip()
+    if not cleaned:
+        return ""
+
+    normalized = _normalize_powershell_text(cleaned)
+    if "#< CLIXML" not in normalized:
+        return normalized
+
+    error_messages = [
+        _normalize_powershell_text(match.group(1))
+        for match in _CLIXML_ERROR_PATTERN.finditer(normalized)
+    ]
+    error_messages = [message for message in error_messages if message]
+    if error_messages:
+        return "\n".join(error_messages)
+
+    return ""
+
+
+def _normalize_powershell_text(text: str) -> str:
+    decoded = html.unescape(
+        text.replace("_x000D__x000A_", "\n")
+        .replace("_x000D_", "\r")
+        .replace("_x000A_", "\n")
+    )
+    normalized = "\n".join(line.rstrip() for line in decoded.splitlines()).strip()
+    return re.sub(r"\n{3,}", "\n\n", normalized)

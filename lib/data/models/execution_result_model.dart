@@ -1,3 +1,4 @@
+import '../../core/utils/powershell_output_formatter.dart';
 import '../../domain/entities/execution_result.dart';
 
 class ExecutionResultModel extends ExecutionResult {
@@ -13,15 +14,25 @@ class ExecutionResultModel extends ExecutionResult {
   });
 
   factory ExecutionResultModel.fromJson(Map<String, dynamic> json) {
+    final output = PowerShellOutputFormatter.sanitize(
+      json['output'] as String? ?? '',
+    );
+    final stdout = PowerShellOutputFormatter.sanitize(
+      json['stdout'] as String? ?? '',
+    );
+    final stderr = PowerShellOutputFormatter.sanitize(
+      json['stderr'] as String? ?? '',
+    );
+
     return ExecutionResultModel(
       success: json['success'] as bool? ?? false,
-      output: json['output'] as String? ?? '',
+      output: output,
       errorCode: json['error_code'] as int? ?? -1,
       executedAt:
           DateTime.tryParse(json['executed_at'] as String? ?? '')?.toLocal() ??
           DateTime.now(),
-      stdout: json['stdout'] as String? ?? '',
-      stderr: json['stderr'] as String? ?? '',
+      stdout: stdout,
+      stderr: stderr,
       taskTitle: json['task_title'] as String? ?? 'Task',
       durationMs: json['duration_ms'] as int? ?? 0,
     );
