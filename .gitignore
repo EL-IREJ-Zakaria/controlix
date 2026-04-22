@@ -53,3 +53,6 @@ agent/*.spec
 agent/build/
 agent/dist/
 agent/installer-output/
+
+# Node backend example
+backend_example/node/.env

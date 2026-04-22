@@ -9,7 +9,7 @@ This is a minimal example of a backend endpoint that your Flutter app can call:
 
 1. `cd backend_example/node`
 2. `npm i`
-3. Copy `.env.example` to `.env` and fill values
+3. Copy `.env.example` to `.env` and fill values (do not commit real secrets)
 4. `npm run dev`
 
 ## Request/response contract
@@ -37,4 +37,3 @@ Body:
 ```json
 { "reply": "..." }
 ```
-
