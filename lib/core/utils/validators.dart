@@ -5,6 +5,22 @@ class Validators {
     r'^((25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(25[0-5]|2[0-4]\d|[01]?\d\d?)$',
   );
 
+  static String? validatePort(String? value) {
+    final candidate = value?.trim() ?? '';
+    if (candidate.isEmpty) {
+      return null;
+    }
+
+    final port = int.tryParse(candidate);
+    if (port == null) {
+      return 'Use a numeric port.';
+    }
+    if (port < 1 || port > 65535) {
+      return 'Use a port between 1 and 65535.';
+    }
+    return null;
+  }
+
   static String? validateIpAddress(String? value) {
     final candidate = value?.trim() ?? '';
     if (candidate.isEmpty) {

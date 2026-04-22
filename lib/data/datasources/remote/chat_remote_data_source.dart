@@ -24,13 +24,39 @@ class ChatRemoteDataSource {
         },
       );
     } on AppException catch (error) {
-      if (error.statusCode == 404) {
+      if (error.statusCode == 401 || error.statusCode == 403) {
         throw const AppException(
-          'Endpoint /api/chat introuvable sur l’agent Windows. '
-          'Mets à jour/redémarre l’agent (version avec la route /api/chat).',
+          'Clé partagée invalide. Vérifie que la clé dans l’app correspond à celle du serveur '
+          '(CONTROLIX_SECRET_KEY pour l’agent, ou CONTROLIX_SHARED_KEY pour le backend Node).',
+          statusCode: 401,
+        );
+      }
+
+      if (error.statusCode == 404) {
+        throw AppException(
+          'Endpoint /api/chat introuvable sur ${config.baseUrl}. '
+          'Vérifie l’IP/le port, puis mets à jour/redémarre l’agent Windows (version avec la route /api/chat).',
           statusCode: 404,
         );
       }
+
+      final message = error.message.toLowerCase();
+      if (error.statusCode == 500 && message.contains('openai_api_key')) {
+        throw const AppException(
+          'OPENAI_API_KEY manquante sur le PC Windows. Ajoute-la dans le fichier `.env` de l’agent, puis redémarre.',
+          statusCode: 500,
+        );
+      }
+
+      if (error.statusCode == 503 &&
+          (message.contains('openai sdk') ||
+              message.contains('pip install openai'))) {
+        throw const AppException(
+          'Le SDK OpenAI n’est pas installé sur le PC Windows. Installe-le (ex: `pip install -r agent/requirements.txt`) puis redémarre l’agent.',
+          statusCode: 503,
+        );
+      }
+
       rethrow;
     }
 

@@ -19,10 +19,17 @@ class ConnectScreen extends StatefulWidget {
 class _ConnectScreenState extends State<ConnectScreen> {
   final _formKey = GlobalKey<FormState>();
   final _ipController = TextEditingController();
+  final _portController = TextEditingController();
   final _secretController = TextEditingController();
 
   bool _seededControllers = false;
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _portController.text = AppConstants.agentPort.toString();
+  }
 
   @override
   void didChangeDependencies() {
@@ -34,6 +41,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     final config = context.read<AppController>().connectionConfig;
     if (config != null) {
       _ipController.text = config.ipAddress;
+      _portController.text = config.port.toString();
       _secretController.text = config.secretKey;
     }
     _seededControllers = true;
@@ -42,8 +50,18 @@ class _ConnectScreenState extends State<ConnectScreen> {
   @override
   void dispose() {
     _ipController.dispose();
+    _portController.dispose();
     _secretController.dispose();
     super.dispose();
+  }
+
+  int _resolvedPort() {
+    final raw = _portController.text.trim();
+    final parsed = int.tryParse(raw);
+    if (parsed == null || parsed < 1 || parsed > 65535) {
+      return AppConstants.agentPort;
+    }
+    return parsed;
   }
 
   Future<void> _save({required bool verifyConnection}) async {
@@ -56,6 +74,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
     final config = ConnectionConfig(
       ipAddress: _ipController.text.trim(),
       secretKey: _secretController.text.trim(),
+      port: _resolvedPort(),
     );
 
     setState(() => _isSubmitting = true);
@@ -98,8 +117,9 @@ class _ConnectScreenState extends State<ConnectScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final gradient = AppTheme.pageGradient(theme.brightness);
+    final port = _resolvedPort();
     final endpointPreview =
-        'http://${_ipController.text.trim().isEmpty ? '192.168.1.24' : _ipController.text.trim()}:${AppConstants.agentPort}';
+        'http://${_ipController.text.trim().isEmpty ? '192.168.1.24' : _ipController.text.trim()}:$port';
 
     return Scaffold(
       body: DecoratedBox(
@@ -162,6 +182,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                                     child: _FormPanel(
                                       formKey: _formKey,
                                       ipController: _ipController,
+                                      portController: _portController,
                                       secretController: _secretController,
                                       endpointPreview: endpointPreview,
                                       isSubmitting: _isSubmitting,
@@ -182,6 +203,7 @@ class _ConnectScreenState extends State<ConnectScreen> {
                                   _FormPanel(
                                     formKey: _formKey,
                                     ipController: _ipController,
+                                    portController: _portController,
                                     secretController: _secretController,
                                     endpointPreview: endpointPreview,
                                     isSubmitting: _isSubmitting,
@@ -335,6 +357,7 @@ class _FormPanel extends StatelessWidget {
   const _FormPanel({
     required this.formKey,
     required this.ipController,
+    required this.portController,
     required this.secretController,
     required this.endpointPreview,
     required this.isSubmitting,
@@ -344,6 +367,7 @@ class _FormPanel extends StatelessWidget {
 
   final GlobalKey<FormState> formKey;
   final TextEditingController ipController;
+  final TextEditingController portController;
   final TextEditingController secretController;
   final String endpointPreview;
   final bool isSubmitting;
@@ -399,6 +423,19 @@ class _FormPanel extends StatelessWidget {
                 labelText: 'IP du poste Windows',
                 hintText: '192.168.1.24',
                 prefixIcon: Icon(Icons.router_rounded),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: portController,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.next,
+              validator: Validators.validatePort,
+              onChanged: (_) => onChanged(),
+              decoration: const InputDecoration(
+                labelText: 'Port (optionnel)',
+                hintText: '8765',
+                prefixIcon: Icon(Icons.numbers_rounded),
               ),
             ),
             const SizedBox(height: 16),
