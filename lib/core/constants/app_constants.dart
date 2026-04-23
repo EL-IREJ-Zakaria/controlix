@@ -3,6 +3,7 @@ class AppConstants {
 
   static const String appName = 'Controlix';
   static const int agentPort = 8765;
+  static const int nodeChatPort = 8787;
   static const int executionHistoryLimit = 25;
   static const int executionHistoryOutputLimit = 1200;
 

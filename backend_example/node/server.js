@@ -140,7 +140,7 @@ app.post("/api/chat", requireSharedKey, async (req, res) => {
   }
 });
 
-const port = Number(process.env.PORT || 8765);
+const port = Number(process.env.PORT || 8787);
 app.listen(port, () => {
   console.log(`Chat backend listening on http://localhost:${port}`);
 });
