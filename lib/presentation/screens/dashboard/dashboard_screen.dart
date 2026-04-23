@@ -9,7 +9,6 @@ import '../../../domain/entities/execution_result.dart';
 import '../../../domain/entities/remote_task.dart';
 import '../../controllers/app_controller.dart';
 import '../../controllers/task_controller.dart';
-import '../chat/chat_screen.dart';
 import '../../widgets/connection_status_card.dart';
 import '../../widgets/execution_history_list.dart';
 import '../../widgets/task_card.dart';
@@ -299,15 +298,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         : width - 40;
 
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        tooltip: 'Assistant',
-        onPressed: () {
-          Navigator.of(
-            context,
-          ).push(MaterialPageRoute<void>(builder: (_) => const ChatScreen()));
-        },
-        child: const Icon(Icons.auto_awesome_rounded),
-      ),
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(

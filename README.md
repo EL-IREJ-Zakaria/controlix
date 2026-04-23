@@ -31,7 +31,6 @@ controlix/
 - Animated splash screen with premium gradient background
 - Connection screen with IP address and shared secret persistence
 - Responsive dashboard with add, edit, delete, and execute task flows
-- Premium AI assistant chat UI (mobile) calling `POST /api/chat`
 - Local execution history stored on the mobile device
 - Flask REST API with `/health`, `/tasks`, `/execute`, and `/history`
 - Shared secret authentication through `X-Controlix-Key`
@@ -190,35 +189,6 @@ Response:
   "error_code": 0,
   "duration_ms": 918,
   "executed_at": "2026-04-14T09:55:11.241190+00:00"
-}
-```
-
-### `POST /api/chat`
-
-This endpoint is consumed by the Flutter AI chat screen and must be implemented server-side
-(never call OpenAI directly from the mobile app).
-
-Requirements on the agent machine:
-
-- `OPENAI_API_KEY` (OpenAI) or `GEMINI_API_KEY` (Gemini) set in `agent/.env`
-- `pip install -r agent/requirements.txt` (includes `openai` for the OpenAI provider)
-
-Request:
-
-```json
-{
-  "messages": [
-    { "role": "user", "content": "Rédige un script PowerShell pour lister les processus." }
-  ]
-}
-```
-
-Response:
-
-```json
-{
-  "success": true,
-  "reply": "…"
 }
 ```
 

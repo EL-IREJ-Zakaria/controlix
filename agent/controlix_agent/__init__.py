@@ -5,7 +5,6 @@ from werkzeug.exceptions import HTTPException
 
 from .config import load_settings
 from .routes.execute import execute_blueprint
-from .routes.chat import chat_blueprint
 from .routes.system import system_blueprint
 from .routes.tasks import tasks_blueprint
 from .services.execution_service import ExecutionService
@@ -81,5 +80,4 @@ def create_app() -> Flask:
     app.register_blueprint(system_blueprint)
     app.register_blueprint(tasks_blueprint)
     app.register_blueprint(execute_blueprint)
-    app.register_blueprint(chat_blueprint)
     return app
