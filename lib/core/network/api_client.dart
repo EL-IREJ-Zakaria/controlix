@@ -78,8 +78,9 @@ class ApiClient {
         return payload;
       }
 
+      final message = _extractErrorMessage(payload);
       throw AppException(
-        payload['message'] as String? ?? 'Request failed.',
+        message ?? 'Request failed.',
         statusCode: response.statusCode,
       );
     } on TimeoutException {
@@ -93,6 +94,35 @@ class ApiClient {
     } on http.ClientException catch (error) {
       throw AppException(error.message);
     }
+  }
+
+  String? _extractErrorMessage(Map<String, dynamic> payload) {
+    final message = payload['message'];
+    if (message is String && message.trim().isNotEmpty) {
+      return message;
+    }
+    if (message is Map<String, dynamic>) {
+      final nested = message['content'];
+      if (nested is String && nested.trim().isNotEmpty) {
+        return nested;
+      }
+    }
+
+    final error = payload['error'];
+    if (error is Map<String, dynamic>) {
+      final nested = error['message'];
+      if (nested is String && nested.trim().isNotEmpty) {
+        return nested;
+      }
+    }
+
+    if (message != null) {
+      return message.toString();
+    }
+    if (error != null) {
+      return error.toString();
+    }
+    return null;
   }
 
   Map<String, dynamic> _decode(String body) {

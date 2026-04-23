@@ -3,7 +3,9 @@
 This is a minimal example of a backend endpoint that your Flutter app can call:
 
 - `POST /api/chat`
-- The backend calls OpenAI **Responses API** using `OPENAI_API_KEY` server-side.
+- The backend calls an AI provider server-side:
+  - OpenAI via **Responses API** (`OPENAI_API_KEY`)
+  - or Gemini via **Gemini API** (`GEMINI_API_KEY`)
 
 ## Setup
 

@@ -200,8 +200,8 @@ This endpoint is consumed by the Flutter AI chat screen and must be implemented 
 
 Requirements on the agent machine:
 
-- `OPENAI_API_KEY` set in `agent/.env`
-- `pip install -r agent/requirements.txt` (includes `openai`)
+- `OPENAI_API_KEY` (OpenAI) or `GEMINI_API_KEY` (Gemini) set in `agent/.env`
+- `pip install -r agent/requirements.txt` (includes `openai` for the OpenAI provider)
 
 Request:
 
