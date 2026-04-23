@@ -25,14 +25,14 @@ class ChatRemoteDataSource {
     ConnectionConfig config,
     List<ChatMessageModel> messages,
   ) async {
-    if (config.port == 8787) {
+    if (config.port == 8765) {
       return null;
     }
 
     final nodeConfig = ConnectionConfig(
       ipAddress: config.ipAddress,
       secretKey: config.secretKey,
-      port: 8787,
+      port: 8765,
     );
 
     try {
@@ -64,9 +64,9 @@ class ChatRemoteDataSource {
         );
       }
 
-      // Common setup: tasks on the agent (8765), chat on the Node example (8787).
+      // Common setup: tasks on the agent (8765), chat on the Node example (8765).
       // If /api/chat is missing (404) OR the target port is unreachable (statusCode == null),
-      // retry the chat request on 8787 automatically.
+      // retry the chat request on 8765 automatically.
       if ((error.statusCode == null || error.statusCode == 404)) {
         final fallback = await _tryNodeFallback(config, messages);
         if (fallback != null) {
@@ -80,7 +80,7 @@ class ChatRemoteDataSource {
           await _apiClient.get(config, '/health');
           throw AppException(
             'Ton agent répond bien sur ${config.baseUrl}, mais la route /api/chat est absente. '
-            'Mets à jour/redémarre l’agent Windows (version avec la route /api/chat), ou utilise le port 8787 si tu passes par le backend Node.',
+            'Mets à jour/redémarre l’agent Windows (version avec la route /api/chat), ou utilise le port 8765 si tu passes par le backend Node.',
             statusCode: 404,
           );
         } on AppException catch (healthError) {
@@ -94,7 +94,7 @@ class ChatRemoteDataSource {
 
           throw AppException(
             'Endpoint /api/chat introuvable sur ${config.baseUrl}. '
-            'Vérifie l’IP/le port (agent: 8765, backend Node: 8787), puis redémarre/met à jour le serveur.',
+            'Vérifie l’IP/le port (agent: 8765, backend Node: 8765), puis redémarre/met à jour le serveur.',
             statusCode: 404,
           );
         }
@@ -103,7 +103,7 @@ class ChatRemoteDataSource {
       if (error.statusCode == null) {
         throw AppException(
           'Impossible de joindre le serveur sur ${config.baseUrl}. '
-          'Vérifie que le PC Windows est allumé, sur le même Wi‑Fi, et que le port est correct (agent: 8765, backend Node: 8787).',
+          'Vérifie que le PC Windows est allumé, sur le même Wi‑Fi, et que le port est correct (agent: 8765, backend Node: 8765).',
         );
       }
 
