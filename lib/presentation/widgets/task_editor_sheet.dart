@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/constants/task_visuals.dart';
 import '../../core/utils/color_utils.dart';
 import '../../core/utils/validators.dart';
 import '../../domain/entities/remote_task.dart';
+import '../controllers/app_controller.dart';
+import '../controllers/task_controller.dart';
 
 class TaskEditorSheet extends StatefulWidget {
   const TaskEditorSheet({super.key, this.initialTask});
@@ -31,6 +34,7 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
 
   late String _selectedIcon;
   late String _selectedAccent;
+  bool _isGeneratingScript = false;
 
   @override
   void initState() {
@@ -75,6 +79,121 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
         updatedAt: widget.initialTask?.updatedAt,
       ),
     );
+  }
+
+  Future<String?> _promptForGeminiRequest() async {
+    final defaultPromptParts = <String>[
+      _titleController.text.trim(),
+      _descriptionController.text.trim(),
+    ].where((value) => value.isNotEmpty).toList(growable: false);
+
+    var draftPrompt =
+        defaultPromptParts.isEmpty ? '' : defaultPromptParts.join('\n');
+
+    final prompt = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Assistant Gemini'),
+          content: TextFormField(
+            initialValue: draftPrompt,
+            autofocus: true,
+            minLines: 2,
+            maxLines: 6,
+            onChanged: (value) => draftPrompt = value,
+            decoration: const InputDecoration(
+              labelText: 'Demande',
+              hintText:
+                  "Ex: 'Lister les processus Chrome et fermer ceux qui ne répondent pas'.",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(draftPrompt.trim()),
+              child: const Text('Générer'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (prompt == null || prompt.trim().isEmpty) {
+      return null;
+    }
+    return prompt.trim();
+  }
+
+  Future<void> _generateScriptWithGemini() async {
+    if (_isGeneratingScript) {
+      return;
+    }
+
+    final config = context.read<AppController>().connectionConfig;
+    if (config == null) {
+      return;
+    }
+
+    final prompt = await _promptForGeminiRequest();
+    if (!mounted || prompt == null) {
+      return;
+    }
+
+    setState(() => _isGeneratingScript = true);
+    try {
+      final script = await context
+          .read<TaskController>()
+          .generatePowerShellScript(config, prompt);
+      if (!mounted) {
+        return;
+      }
+      final trimmed = script.trim();
+      if (trimmed.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Aucun script généré. Vérifie la clé Gemini sur l’agent Windows.',
+            ),
+          ),
+        );
+        return;
+      }
+      _scriptController.value = TextEditingValue(
+        text: trimmed,
+        selection: TextSelection.collapsed(offset: trimmed.length),
+      );
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Script PowerShell généré.')),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      final message = error.toString();
+      await showDialog<void>(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Génération impossible'),
+            content: Text(message),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isGeneratingScript = false);
+      }
+    }
   }
 
   InputDecoration _decoration({
@@ -281,6 +400,26 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
                                             ?.copyWith(color: accentColor),
                                       ),
                                       const Spacer(),
+                                      TextButton.icon(
+                                        onPressed: _isGeneratingScript
+                                            ? null
+                                            : _generateScriptWithGemini,
+                                        icon: _isGeneratingScript
+                                            ? SizedBox(
+                                                width: 16,
+                                                height: 16,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                ),
+                                              )
+                                            : const Icon(
+                                                Icons.auto_awesome_rounded,
+                                                size: 18,
+                                              ),
+                                        label: const Text('Gemini'),
+                                      ),
+                                      const SizedBox(width: 8),
                                       Text(
                                         '${_scriptController.text.trim().length} caractères',
                                         style: theme.textTheme.bodySmall

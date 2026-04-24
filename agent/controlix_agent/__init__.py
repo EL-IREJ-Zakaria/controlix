@@ -4,10 +4,12 @@ from flask import Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
 
 from .config import load_settings
+from .routes.assistant import assistant_blueprint
 from .routes.execute import execute_blueprint
 from .routes.system import system_blueprint
 from .routes.tasks import tasks_blueprint
 from .services.execution_service import ExecutionService
+from .services.gemini_assistant_service import GeminiAssistantService
 from .services.task_service import TaskService
 from .utils.security import ensure_lan_request
 
@@ -19,6 +21,7 @@ def create_app() -> Flask:
     app.config["SETTINGS"] = settings
     app.extensions["task_service"] = TaskService(settings.tasks_file)
     app.extensions["execution_service"] = ExecutionService(settings)
+    app.extensions["gemini_assistant_service"] = GeminiAssistantService(settings)
 
     @app.before_request
     def restrict_to_lan() -> None:
@@ -80,4 +83,5 @@ def create_app() -> Flask:
     app.register_blueprint(system_blueprint)
     app.register_blueprint(tasks_blueprint)
     app.register_blueprint(execute_blueprint)
+    app.register_blueprint(assistant_blueprint)
     return app

@@ -94,6 +94,9 @@ class ControlixApp extends StatelessWidget {
             saveTask: SaveTaskUseCase(taskRepository),
             deleteTask: DeleteTaskUseCase(taskRepository),
             executeTask: ExecuteTaskUseCase(taskRepository),
+            generatePowerShellScript: GeneratePowerShellScriptUseCase(
+              taskRepository,
+            ),
             verifyConnection: VerifyConnectionUseCase(taskRepository),
             loadHistory: LoadHistoryUseCase(historyRepository),
             saveHistory: SaveHistoryUseCase(historyRepository),

@@ -34,4 +34,9 @@ class TaskRepositoryImpl implements TaskRepository {
   Future<void> verifyConnection(ConnectionConfig config) {
     return _remoteDataSource.verifyConnection(config);
   }
+
+  @override
+  Future<String> generatePowerShellScript(ConnectionConfig config, String prompt) {
+    return _remoteDataSource.generatePowerShellScript(config, prompt);
+  }
 }

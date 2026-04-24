@@ -12,4 +12,6 @@ abstract class TaskRepository {
   Future<void> deleteTask(ConnectionConfig config, String taskId);
 
   Future<ExecutionResult> executeTask(ConnectionConfig config, String taskId);
+
+  Future<String> generatePowerShellScript(ConnectionConfig config, String prompt);
 }

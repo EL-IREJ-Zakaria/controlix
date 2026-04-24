@@ -34,6 +34,9 @@ class Settings:
     tasks_file: Path
     logs_file: Path
     scripts_dir: Path
+    gemini_api_key: str
+    gemini_model: str
+    gemini_timeout: int
 
 
 def load_settings() -> Settings:
@@ -57,4 +60,7 @@ def load_settings() -> Settings:
         tasks_file=TASKS_FILE,
         logs_file=LOGS_FILE,
         scripts_dir=SCRIPTS_DIR,
+        gemini_api_key=os.getenv("CONTROLIX_GEMINI_API_KEY", "").strip(),
+        gemini_model=os.getenv("CONTROLIX_GEMINI_MODEL", "gemini-1.5-flash").strip(),
+        gemini_timeout=int(os.getenv("CONTROLIX_GEMINI_TIMEOUT", "20")),
     )

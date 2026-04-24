@@ -52,3 +52,13 @@ class ExecuteTaskUseCase {
     return _repository.executeTask(config, taskId);
   }
 }
+
+class GeneratePowerShellScriptUseCase {
+  const GeneratePowerShellScriptUseCase(this._repository);
+
+  final TaskRepository _repository;
+
+  Future<String> call(ConnectionConfig config, String prompt) {
+    return _repository.generatePowerShellScript(config, prompt);
+  }
+}

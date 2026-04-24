@@ -17,6 +17,7 @@ class TaskController extends ChangeNotifier {
     required SaveTaskUseCase saveTask,
     required DeleteTaskUseCase deleteTask,
     required ExecuteTaskUseCase executeTask,
+    required GeneratePowerShellScriptUseCase generatePowerShellScript,
     required VerifyConnectionUseCase verifyConnection,
     required LoadHistoryUseCase loadHistory,
     required SaveHistoryUseCase saveHistory,
@@ -25,6 +26,7 @@ class TaskController extends ChangeNotifier {
        _saveTask = saveTask,
        _deleteTask = deleteTask,
        _executeTask = executeTask,
+       _generatePowerShellScript = generatePowerShellScript,
        _verifyConnection = verifyConnection,
        _loadHistory = loadHistory,
        _saveHistory = saveHistory,
@@ -34,6 +36,7 @@ class TaskController extends ChangeNotifier {
   final SaveTaskUseCase _saveTask;
   final DeleteTaskUseCase _deleteTask;
   final ExecuteTaskUseCase _executeTask;
+  final GeneratePowerShellScriptUseCase _generatePowerShellScript;
   final VerifyConnectionUseCase _verifyConnection;
   final LoadHistoryUseCase _loadHistory;
   final SaveHistoryUseCase _saveHistory;
@@ -78,6 +81,13 @@ class TaskController extends ChangeNotifier {
 
   Future<void> verifyConnection(ConnectionConfig config) {
     return _verifyConnection(config);
+  }
+
+  Future<String> generatePowerShellScript(
+    ConnectionConfig config,
+    String prompt,
+  ) {
+    return _generatePowerShellScript(config, prompt);
   }
 
   Future<void> refreshTasks(ConnectionConfig config) async {

@@ -71,7 +71,7 @@ class ApiClient {
     Future<http.Response> Function() request,
   ) async {
     try {
-      final response = await request().timeout(const Duration(seconds: 12));
+      final response = await request().timeout(const Duration(seconds: 30));
       final payload = _decode(response.body);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
