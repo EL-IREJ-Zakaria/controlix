@@ -36,7 +36,11 @@ class Settings:
     scripts_dir: Path
     gemini_api_key: str
     gemini_model: str
+    gemini_fallback_models: tuple[str, ...]
     gemini_timeout: int
+    gemini_max_retries: int
+    gemini_retry_base_delay: float
+    gemini_retry_max_delay: float
 
 
 def load_settings() -> Settings:
@@ -62,5 +66,15 @@ def load_settings() -> Settings:
         scripts_dir=SCRIPTS_DIR,
         gemini_api_key=os.getenv("CONTROLIX_GEMINI_API_KEY", "").strip(),
         gemini_model=os.getenv("CONTROLIX_GEMINI_MODEL", "gemini-1.5-flash").strip(),
+        gemini_fallback_models=tuple(
+            model.strip()
+            for model in os.getenv("CONTROLIX_GEMINI_FALLBACK_MODELS", "").split(",")
+            if model.strip()
+        ),
         gemini_timeout=int(os.getenv("CONTROLIX_GEMINI_TIMEOUT", "20")),
+        gemini_max_retries=int(os.getenv("CONTROLIX_GEMINI_MAX_RETRIES", "4")),
+        gemini_retry_base_delay=float(
+            os.getenv("CONTROLIX_GEMINI_RETRY_BASE_DELAY", "0.8")
+        ),
+        gemini_retry_max_delay=float(os.getenv("CONTROLIX_GEMINI_RETRY_MAX_DELAY", "8")),
     )

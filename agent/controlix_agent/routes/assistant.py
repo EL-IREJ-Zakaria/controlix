@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from flask import Blueprint, current_app, jsonify, request
-from werkzeug.exceptions import BadRequest, BadGateway, ServiceUnavailable
+from werkzeug.exceptions import BadRequest, BadGateway, ServiceUnavailable, TooManyRequests
 
 from ..utils.security import ensure_authorized
+from ..services.gemini_assistant_service import GeminiApiError
 
 assistant_blueprint = Blueprint("assistant", __name__)
 
@@ -26,6 +27,12 @@ def gemini_powershell() -> tuple[object, int] | object:
 
     try:
         script = gemini_service.generate_powershell_script(prompt.strip())
+    except GeminiApiError as error:
+        if error.status_code == 429:
+            raise TooManyRequests(str(error)) from error
+        if error.status_code in (500, 502, 503, 504) or error.retryable:
+            raise ServiceUnavailable(str(error)) from error
+        raise BadGateway(str(error)) from error
     except RuntimeError as error:
         raise BadGateway(str(error)) from error
 
@@ -33,4 +40,3 @@ def gemini_powershell() -> tuple[object, int] | object:
         raise BadRequest("Gemini could not produce a PowerShell script for this request.")
 
     return jsonify({"success": True, "script": script})
-

@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import email.utils
 import json
+import random
 import re
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -17,12 +20,33 @@ _FENCED_BLOCK_PATTERN = re.compile(
 )
 _FENCE_PATTERN = re.compile(r"^```[a-zA-Z0-9_-]*\s*|\s*```$", re.MULTILINE)
 
+_RETRYABLE_HTTP_CODES = {429, 500, 502, 503, 504}
+
+
+class GeminiApiError(RuntimeError):
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int | None = None,
+        retry_after: float | None = None,
+        retryable: bool = False,
+    ) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.retry_after = retry_after
+        self.retryable = retryable
+
 
 class GeminiAssistantService:
     def __init__(self, settings: Settings) -> None:
         self._api_key = settings.gemini_api_key
-        self._model = settings.gemini_model
+        primary_model = settings.gemini_model
+        self._models = (primary_model, *settings.gemini_fallback_models)
         self._timeout = settings.gemini_timeout
+        self._max_retries = max(0, settings.gemini_max_retries)
+        self._retry_base_delay = max(0.0, settings.gemini_retry_base_delay)
+        self._retry_max_delay = max(self._retry_base_delay, settings.gemini_retry_max_delay)
 
     @property
     def is_configured(self) -> bool:
@@ -63,56 +87,85 @@ class GeminiAssistantService:
         return repaired_script if ok else script
 
     def _generate_text(self, prompt: str) -> str:
+        last_error: GeminiApiError | None = None
+        for model in self._models:
+            try:
+                return self._generate_text_with_model(model, prompt)
+            except GeminiApiError as error:
+                last_error = error
+                if error.retryable and model != self._models[-1]:
+                    continue
+                raise
+        raise last_error or GeminiApiError("Gemini API request failed.")
+
+    def _generate_text_with_model(self, model_name: str, prompt: str) -> str:
         # Using the public Gemini API via Google Generative Language endpoint.
-        # We keep the payload minimal to reduce compatibility issues.
-        model = urllib.parse.quote(self._model, safe="")
+        # Keep the payload minimal to reduce compatibility issues.
+        model = urllib.parse.quote(model_name, safe="")
         url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
             f"{model}:generateContent?key={urllib.parse.quote(self._api_key, safe='')}"
         )
         payload = {
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [{"text": prompt}],
-                }
-            ],
-            "generationConfig": {
-                "temperature": 0.2,
-                "maxOutputTokens": 512,
-            },
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.2, "maxOutputTokens": 512},
         }
         body = json.dumps(payload).encode("utf-8")
-        request = urllib.request.Request(
-            url,
-            data=body,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(request, timeout=self._timeout) as response:
-                raw = response.read().decode("utf-8", errors="replace")
-        except urllib.error.HTTPError as error:
-            details = ""
+
+        attempt = 0
+        while True:
+            request = urllib.request.Request(
+                url,
+                data=body,
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                },
+                method="POST",
+            )
             try:
-                details = error.read().decode("utf-8", errors="replace")
-            except Exception:
-                details = ""
-            raise RuntimeError(
-                f"Gemini API error (HTTP {error.code}). {details}".strip()
-            ) from error
-        except urllib.error.URLError as error:
-            raise RuntimeError(f"Gemini API request failed. {error}".strip()) from error
-
-        try:
-            data = json.loads(raw or "{}")
-        except json.JSONDecodeError as error:
-            raise RuntimeError("Gemini API returned invalid JSON.") from error
-
-        if not isinstance(data, dict):
-            raise RuntimeError("Gemini API returned an unexpected payload.")
-
-        return _extract_gemini_text(data)
+                with urllib.request.urlopen(request, timeout=self._timeout) as response:
+                    raw = response.read().decode("utf-8", errors="replace")
+                data = json.loads(raw or "{}")
+                if not isinstance(data, dict):
+                    raise GeminiApiError("Gemini API returned an unexpected payload.")
+                return _extract_gemini_text(data)
+            except urllib.error.HTTPError as error:
+                status_code = getattr(error, "code", None)
+                details = _read_http_error_body(error)
+                retry_after = _parse_retry_after(error.headers.get("Retry-After"))
+                retryable = bool(status_code in _RETRYABLE_HTTP_CODES)
+                message = _format_gemini_http_error(status_code, details)
+                if retryable and attempt < self._max_retries:
+                    _sleep_before_retry(
+                        attempt,
+                        retry_after=retry_after,
+                        base_delay=self._retry_base_delay,
+                        max_delay=self._retry_max_delay,
+                    )
+                    attempt += 1
+                    continue
+                raise GeminiApiError(
+                    message,
+                    status_code=status_code,
+                    retry_after=retry_after,
+                    retryable=retryable,
+                ) from error
+            except (urllib.error.URLError, TimeoutError, OSError) as error:
+                retryable = True
+                message = f"Gemini API request failed. {error}".strip()
+                if retryable and attempt < self._max_retries:
+                    _sleep_before_retry(
+                        attempt,
+                        retry_after=None,
+                        base_delay=self._retry_base_delay,
+                        max_delay=self._retry_max_delay,
+                    )
+                    attempt += 1
+                    continue
+                raise GeminiApiError(message, retryable=retryable) from error
+            except json.JSONDecodeError as error:
+                raise GeminiApiError("Gemini API returned invalid JSON.") from error
 
 
 def _extract_gemini_text(payload: dict) -> str:
@@ -197,3 +250,88 @@ def _powershell_parses(script: str) -> tuple[bool, str]:
     stdout = (completed.stdout or "").strip()
     message = stderr or stdout or f"Parse check failed with exit code {completed.returncode}."
     return False, message
+
+
+def _read_http_error_body(error: urllib.error.HTTPError) -> str:
+    try:
+        return error.read().decode("utf-8", errors="replace")
+    except Exception:
+        return ""
+
+
+def _format_gemini_http_error(status_code: int | None, details: str) -> str:
+    message = ""
+    status = ""
+    trimmed_details = (details or "").strip()
+    if details:
+        try:
+            parsed = json.loads(details)
+            if isinstance(parsed, dict):
+                err = parsed.get("error")
+                if isinstance(err, dict):
+                    msg = err.get("message")
+                    if isinstance(msg, str):
+                        message = msg.strip()
+                    st = err.get("status")
+                    if isinstance(st, str):
+                        status = st.strip()
+        except json.JSONDecodeError:
+            message = _truncate(trimmed_details, 800)
+
+    parts: list[str] = []
+    if status_code:
+        parts.append(f"Gemini API error (HTTP {status_code}).")
+    else:
+        parts.append("Gemini API error.")
+    if message:
+        parts.append(message)
+    elif trimmed_details:
+        parts.append(_truncate(trimmed_details, 800))
+    if status and status not in message:
+        parts.append(f"Status: {status}.")
+    return " ".join(parts).strip()
+
+
+def _parse_retry_after(value: str | None) -> float | None:
+    if not value:
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    if text.isdigit():
+        seconds = int(text)
+        return float(max(0, seconds))
+    try:
+        when = email.utils.parsedate_to_datetime(text)
+    except (TypeError, ValueError):
+        return None
+    if when is None:
+        return None
+    if when.tzinfo is None:
+        return None
+    now = time.time()
+    return float(max(0.0, when.timestamp() - now))
+
+
+def _sleep_before_retry(
+    attempt: int,
+    *,
+    retry_after: float | None,
+    base_delay: float,
+    max_delay: float,
+) -> None:
+    if retry_after is not None:
+        delay = max(0.0, min(max_delay, retry_after))
+    else:
+        delay = base_delay * (2**attempt)
+        delay = max(0.0, min(max_delay, delay))
+        jitter = random.uniform(0.0, delay * 0.25)
+        delay += jitter
+    if delay > 0:
+        time.sleep(delay)
+
+
+def _truncate(value: str, limit: int) -> str:
+    if len(value) <= limit:
+        return value
+    return value[: max(0, limit - 1)].rstrip() + "…"

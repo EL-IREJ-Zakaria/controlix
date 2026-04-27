@@ -62,6 +62,13 @@ app.*.map.json
 *.der
 *.kdbx
 
+## Donnees runtime locales (agent)
+agent/data/
+
+## Fichiers de config locaux (Flutter/Android)
+**/key.properties
+**/local.properties
+
 ## Python agent
 agent/.venv/
 agent/__pycache__/
