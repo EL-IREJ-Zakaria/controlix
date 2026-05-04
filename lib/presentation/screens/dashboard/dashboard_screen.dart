@@ -394,11 +394,6 @@ class _TopStrip extends StatelessWidget {
           text: config.ipAddress,
           accent: theme.colorScheme.secondary,
         ),
-        _TopPill(
-          icon: Icons.lock_outline_rounded,
-          text: 'Backend inchangé',
-          accent: theme.colorScheme.onSurface.withValues(alpha: 0.72),
-        ),
       ],
     );
   }

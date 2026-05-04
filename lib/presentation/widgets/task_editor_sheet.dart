@@ -392,43 +392,89 @@ class _TaskEditorSheetState extends State<TaskEditorSheet> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    children: [
-                                      Text(
+                                  LayoutBuilder(
+                                    builder: (context, constraints) {
+                                      final countText =
+                                          '${_scriptController.text.trim().length} caractères';
+
+                                      final title = Text(
                                         'Script PowerShell',
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                         style: theme.textTheme.titleMedium
                                             ?.copyWith(color: accentColor),
-                                      ),
-                                      const Spacer(),
-                                      TextButton.icon(
-                                        onPressed: _isGeneratingScript
-                                            ? null
-                                            : _generateScriptWithGemini,
-                                        icon: _isGeneratingScript
-                                            ? SizedBox(
-                                                width: 16,
-                                                height: 16,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                ),
-                                              )
-                                            : const Icon(
-                                                Icons.auto_awesome_rounded,
-                                                size: 18,
+                                      );
+
+                                      final actions = Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          TextButton.icon(
+                                            onPressed: _isGeneratingScript
+                                                ? null
+                                                : _generateScriptWithGemini,
+                                            icon: _isGeneratingScript
+                                                ? const SizedBox(
+                                                    width: 16,
+                                                    height: 16,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
+                                                  )
+                                                : const Icon(
+                                                    Icons.auto_awesome_rounded,
+                                                    size: 18,
+                                                  ),
+                                            label: const Text('Gemini'),
+                                            style: TextButton.styleFrom(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 8,
                                               ),
-                                        label: const Text('Gemini'),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        '${_scriptController.text.trim().length} caractères',
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: theme.colorScheme.onSurface
-                                                  .withValues(alpha: 0.52),
+                                              minimumSize: Size.zero,
+                                              tapTargetSize:
+                                                  MaterialTapTargetSize
+                                                      .shrinkWrap,
+                                              visualDensity:
+                                                  VisualDensity.compact,
                                             ),
-                                      ),
-                                    ],
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            countText,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                                  color: theme
+                                                      .colorScheme.onSurface
+                                                      .withValues(alpha: 0.52),
+                                                ),
+                                          ),
+                                        ],
+                                      );
+
+                                      if (constraints.maxWidth < 360) {
+                                        return Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            title,
+                                            const SizedBox(height: 8),
+                                            actions,
+                                          ],
+                                        );
+                                      }
+
+                                      return Row(
+                                        children: [
+                                          Expanded(child: title),
+                                          const SizedBox(width: 12),
+                                          actions,
+                                        ],
+                                      );
+                                    },
                                   ),
                                   const SizedBox(height: 12),
                                   TextFormField(
